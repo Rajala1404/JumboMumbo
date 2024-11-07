@@ -1,0 +1,8 @@
+[package]
+name = "Informatik_Game"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+# The Base for everything like ui drawing and window management (should be ok because in scratch it's the same)
+macroquad = "0.4.13"
