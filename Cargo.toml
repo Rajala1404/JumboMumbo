@@ -4,5 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-# The Base for everything like ui drawing and window management (should be ok because in scratch it's the same)
+# The Base for everything like ui drawing and window management
 macroquad = "0.4.13"
+# Small addon to make collision detection and level worlds possible
+macroquad-platformer = "0.2.0"

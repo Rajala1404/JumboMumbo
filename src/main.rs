@@ -1,9 +1,15 @@
 mod utils;
+mod scenes;
+mod logic;
 
-use macroquad::prelude::*;
-use macroquad::ui::root_ui;
+use std::collections::BTreeMap;
 use crate::utils::mathemann::stretch_float_to;
 use crate::utils::text::{draw_text_center, draw_text_centered};
+use macroquad::prelude::*;
+use crate::scenes::level_selector::level_selector;
+use crate::scenes::levels::levels;
+use crate::scenes::levels::levels::{start_level, LevelSceneData};
+use crate::scenes::main_menu::main_menu;
 
 fn window_conf() -> Conf {
     Conf {
@@ -16,10 +22,28 @@ fn window_conf() -> Conf {
     }
 }
 
+enum Scene {
+    MainMenu,
+    SettingsMenu,
+    /// The i32 is the Page
+    LevelSelector(i32),
+    Level(levels::Level)
+}
+
+#[derive(Ord, PartialOrd, Eq, PartialEq, Copy, Clone)]
+enum SceneTextureKey {
+    Level0,
+}
+
+#[derive(Ord, PartialOrd, Eq, PartialEq, Copy, Clone)]
+enum TextureKey {
+    Player,
+}
+
 #[macroquad::main(window_conf)]
 async fn main() {
     let skin = {
-        let font = load_ttf_font("src/res/fonts/MinimalPixel v2.ttf").await.unwrap();
+        let font = load_ttf_font("res/fonts/MinimalPixel v2.ttf").await.unwrap();
     };
 
     // Runs to make sure the screen size is the right one
@@ -30,14 +54,32 @@ async fn main() {
 
     loading().await;
 
+    // Holds the current scene
+    let mut scene = Scene::MainMenu;
+    // Holds all data of scenes (score, enemies ...)
+    let mut level_scene_data = LevelSceneData {level: None, player: None, platforms: vec![], world: None };
+    // Holds all textures
+    let mut textures = BTreeMap::<SceneTextureKey, BTreeMap<TextureKey, Vec<Texture2D>>>::new();
+
     loop {
         clear_background(BLACK);
-        draw_text_centered("MumboJumbo", screen_height() / 8.0, screen_height() / 8.0, Color::from_rgba(255, 255, 255, 255)).await;
+        // Depending on the Scene does something else
+        match scene {
+            Scene::MainMenu => {
+                main_menu(&mut scene).await;
+            }
+            Scene::SettingsMenu => {
 
-        if root_ui().button(Some(Vec2 { x: screen_width() / 2.0, y: screen_height() / 2.0 }), "Test 124") {
-            warn!("Test 1234 clicked")
+            }
+            Scene::LevelSelector(_) => {
+                level_selector(&mut scene).await;
+            }
+            Scene::Level(_) => {
+                start_level(&mut scene, &mut textures, &mut level_scene_data).await;
+            }
         }
 
+        // Gets ONLY called after the game loop is done to ensure everything is drawn the right way
         next_frame().await
     };
 }
