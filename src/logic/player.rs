@@ -3,6 +3,7 @@ use macroquad::color::WHITE;
 use macroquad::input::{is_key_down, KeyCode};
 use macroquad::math::{vec2, Vec2};
 use macroquad::prelude::{draw_texture_ex, get_frame_time, screen_height, DrawTextureParams, Texture2D};
+use macroquad::window::screen_width;
 use macroquad_platformer::{Actor, World};
 use crate::TextureKey;
 
@@ -28,16 +29,16 @@ impl Player {
 
         // If the player is not on the ground change velocity of y to 500 (to simulate gravity)
         if on_ground == false {      // multiplies by get_frame_time() so the speed is on all refresh rates the same
-            self.speed.y += 4000.0 * get_frame_time();
+            self.speed.y += screen_height() / 0.3 * get_frame_time();
         }
 
         // Checks if key is currently pressed
         if is_key_down(KeyCode::D) || is_key_down(KeyCode::Right) {
             // If D or Right Arrow is pressed the Player will be moved to the right by increasing the speed on the x-axis
-            self.speed.x = 1000.0;
+            self.speed.x = screen_width() / 2.5;
             self.state = 1;
         } else if is_key_down(KeyCode::A) || is_key_down(KeyCode::Left) {
-            self.speed.x = -1000.0;
+            self.speed.x = screen_width() / -2.5;
             self.state = 0;
         } else {
             // Resets the speed if nothing is pressed
@@ -46,7 +47,7 @@ impl Player {
 
         if is_key_down(KeyCode::Space) {
             if on_ground {
-                self.speed.y = -1400.0;
+                self.speed.y = screen_height() / -0.9;
             }
         }
 
