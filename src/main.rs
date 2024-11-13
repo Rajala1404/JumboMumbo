@@ -73,7 +73,6 @@ async fn main() {
             button_style,
             ..root_ui().default_skin()
         }
-
     };
 
     let mut window_skin = skin.clone();
@@ -94,7 +93,9 @@ async fn main() {
     let mut level_scene_data = LevelSceneData {level: None, player: None, platforms: vec![], world: None };
     // Holds all textures
     let mut textures = BTreeMap::<SceneTextureKey, BTreeMap<TextureKey, Vec<Texture2D>>>::new();
-
+    // The camera
+    let mut camera = Camera2D::from_display_rect(Rect::new(0.0, screen_height(), screen_width(), -screen_height()));
+    set_camera(&camera);
     loop {
         clear_background(BLACK);
         // Depending on the Scene does something else
@@ -109,7 +110,7 @@ async fn main() {
                 level_selector(&mut scene).await;
             }
             Scene::Level(_) => {
-                start_level(&mut scene, &mut textures, &mut level_scene_data).await;
+                start_level(&mut scene, &mut camera, &mut textures, &mut level_scene_data).await;
             }
         }
 

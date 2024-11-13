@@ -1,4 +1,5 @@
 use std::collections::BTreeMap;
+use macroquad::camera::Camera2D;
 use macroquad::prelude::{Texture2D, Vec2};
 use macroquad_platformer::{Solid, World};
 use crate::{Scene, SceneTextureKey, TextureKey};
@@ -25,7 +26,7 @@ pub struct Platform {
     pub speed: Vec2,
 }
 
-pub async fn start_level(mut scene: &mut Scene, mut textures: &mut BTreeMap<SceneTextureKey, BTreeMap<TextureKey, Vec<Texture2D>>>, mut level_scene_data: &mut LevelSceneData) {
+pub async fn start_level(mut scene: &mut Scene, mut camera: &mut Camera2D, mut textures: &mut BTreeMap<SceneTextureKey, BTreeMap<TextureKey, Vec<Texture2D>>>, mut level_scene_data: &mut LevelSceneData) {
     match scene {
         Scene::MainMenu => {}
         Scene::SettingsMenu => {}
@@ -35,7 +36,7 @@ pub async fn start_level(mut scene: &mut Scene, mut textures: &mut BTreeMap<Scen
         Scene::Level(level) => {
             match level {
                 Level::Level0 => {
-                    level_0(&mut scene, &mut textures, &mut level_scene_data).await;
+                    level_0(&mut scene, &mut camera, &mut textures, &mut level_scene_data).await;
                 }
             }
         }
