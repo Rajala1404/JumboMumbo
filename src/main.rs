@@ -75,7 +75,7 @@ async fn main() {
         }
     };
 
-    let mut window_skin = skin.clone();
+    let window_skin = skin.clone();
 
     root_ui().push_skin(&window_skin);
 
@@ -90,12 +90,9 @@ async fn main() {
     // Holds the current scene
     let mut scene = Scene::MainMenu;
     // Holds all data of scenes (score, enemies ...)
-    let mut level_scene_data = LevelSceneData {level: None, player: None, platforms: vec![], world: None };
+    let mut level_scene_data = LevelSceneData {level: None, player: None, platforms: vec![], world: None, triggers: BTreeMap::new(), trigger_locks: BTreeMap::new() };
     // Holds all textures
     let mut textures = BTreeMap::<SceneTextureKey, BTreeMap<TextureKey, Vec<Texture2D>>>::new();
-    // The camera
-    let mut camera = Camera2D::from_display_rect(Rect::new(0.0, screen_height(), screen_width(), -screen_height()));
-    set_camera(&camera);
     loop {
         clear_background(BLACK);
         // Depending on the Scene does something else
@@ -110,7 +107,7 @@ async fn main() {
                 level_selector(&mut scene).await;
             }
             Scene::Level(_) => {
-                start_level(&mut scene, &mut camera, &mut textures, &mut level_scene_data).await;
+                start_level(&mut scene, &mut textures, &mut level_scene_data).await;
             }
         }
 

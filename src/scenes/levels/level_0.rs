@@ -3,10 +3,10 @@ use crate::{Scene, SceneTextureKey, TextureKey};
 use macroquad::prelude::*;
 use macroquad_platformer::World;
 use crate::logic::player::Player;
-use crate::scenes::levels::levels::{Level, LevelSceneData, Platform};
+use crate::scenes::levels::levels::{Level, LevelSceneData, Platform, Triggers};
+use crate::utils::debugger::draw_camera_collider;
 
-
-pub async fn level_0(scene: &mut Scene, mut camera: &mut Camera2D, mut textures: &mut BTreeMap<SceneTextureKey, BTreeMap<TextureKey, Vec<Texture2D>>>, level_scene_data: &mut LevelSceneData) {
+pub async fn level_0(scene: &mut Scene, mut textures: &mut BTreeMap<SceneTextureKey, BTreeMap<TextureKey, Vec<Texture2D>>>, level_scene_data: &mut LevelSceneData) {
     clear_background(DARKBLUE);
 
     // Load textures if not loaded already
@@ -37,14 +37,33 @@ pub async fn level_0(scene: &mut Scene, mut camera: &mut Camera2D, mut textures:
             }),
             platforms: vec![Platform{collider: world.add_solid(vec2(0.0 - screen_width(), screen_height()), screen_width()  as i32 * 3, (screen_height() / 32.0) as i32 ), speed: vec2(0.0, 0.0)}],
             world: Some(world),
-        }
+            triggers: BTreeMap::new(),
+            trigger_locks: BTreeMap::new()
+        };
     }
 
     let mut world = level_scene_data.world.as_mut().unwrap();
     let player = level_scene_data.player.as_mut().unwrap();
 
-    player.control(&mut world, &mut camera).await;
+    player.control(&mut world).await;
     player.render(&mut world, &textures).await;
+
+    { // CameraCollider
+        if is_key_down(KeyCode::Q) && is_key_down(KeyCode::C) && !level_scene_data.trigger_locks.get(&Triggers::ShowCameraColliders).unwrap_or(&false).to_owned() {
+            println!("Executed!");
+            let value = level_scene_data.triggers.get(&Triggers::ShowCameraColliders);
+            level_scene_data.triggers.insert(Triggers::ShowCameraColliders, !value.unwrap_or(&false));
+            level_scene_data.trigger_locks.insert(Triggers::ShowCameraColliders, true);
+        }
+
+        if is_key_released(KeyCode::Q) || is_key_released(KeyCode::C) {
+            level_scene_data.trigger_locks.insert(Triggers::ShowCameraColliders, false);
+        }
+
+        if level_scene_data.triggers.get(&Triggers::ShowCameraColliders).unwrap_or(&false).to_owned() {
+            draw_camera_collider(world, player).await;
+        }
+    }
 
     draw_line(screen_width() / 2.0, screen_height() / 2.0, screen_width() / 2.0 + 100.0, screen_height() / 2.0 + 100.0, 10.0, WHITE);
 }

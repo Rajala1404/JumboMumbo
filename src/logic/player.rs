@@ -24,7 +24,7 @@ pub struct Player {
 
 impl Player {
     /// This function handles everything regarding the controls of the player (including moving)
-    pub async fn control(&mut self, world: &mut World, camera: &mut Camera2D) {
+    pub async fn control(&mut self, world: &mut World) {
         // gets the current position of the player from the world
         let pos = world.actor_pos(self.collider);
         let on_ground = world.collide_check(self.collider, pos + vec2(0.0, 1.0));
@@ -34,14 +34,19 @@ impl Player {
             self.speed.y += screen_height() / 0.3 * get_frame_time();
         }
 
+        // 1 = Left, 2 = Right
+        let mut direction = 0;
+
         // Checks if key is currently pressed
         if is_key_down(KeyCode::D) || is_key_down(KeyCode::Right) {
             // If D or Right Arrow is pressed the Player will be moved to the right by increasing the speed on the x-axis
             self.speed.x = screen_width() / 2.5;
             self.state = 1;
+            direction = 2;
         } else if is_key_down(KeyCode::A) || is_key_down(KeyCode::Left) {
             self.speed.x = screen_width() / -2.5;
             self.state = 0;
+            direction = 1;
         } else {
             // Resets the speed if nothing is pressed
             self.speed.x = 0.0;
@@ -59,15 +64,34 @@ impl Player {
 
         let pos = world.actor_pos(self.collider);
 
+        fn move_camera_collider(collider: Actor, world: &mut World, left: bool, trigger: bool, pos: &Vec2) {
+            let y = pos.y + screen_height() / 12.0 - screen_height();
+            if left {
+                if trigger {
+                    world.set_actor_position(collider, vec2(pos.x - screen_width() / 4.0, y));
+                } else {
+                    world.set_actor_position(collider, vec2(pos.x + screen_height() / 12.0 + screen_width() / 4.0 - screen_width(), y));
+                }
+            } else {
+                if trigger {
+                    world.set_actor_position(collider, vec2(pos.x + screen_height() / 12.0, y));
+                } else {
+                    world.set_actor_position(collider, vec2(pos.x + (screen_width() / 2.0), y));
+                }
+            }
+        }
+
         // Make camera follow player
-        if pos.x -1.0 <= world.actor_pos(self.camera_collider[0]).x + screen_width() / 4.0 {
+        if pos.x -1.0 <= world.actor_pos(self.camera_collider[0]).x + screen_width() / 4.0 && direction != 2 {
             set_camera(&Camera2D::from_display_rect(Rect::new(pos.x - screen_width() / 4.0 , screen_height() , screen_width(), -screen_height())));
-            world.move_h(self.camera_collider[0], self.speed.x * get_frame_time());
-            world.move_h(self.camera_collider[1], self.speed.x * get_frame_time());
-        } else if pos.x + screen_height() / 12.0 + 1.0 >= world.actor_pos(self.camera_collider[1]).x {
+
+            move_camera_collider(self.camera_collider[0], world, true, true, &pos);
+            move_camera_collider(self.camera_collider[1], world, false, false, &pos);
+        } else if pos.x + screen_height() / 12.0 + 1.0 >= world.actor_pos(self.camera_collider[1]).x && direction != 1 {
             set_camera(&Camera2D::from_display_rect(Rect::new(pos.x + screen_height() / 12.0 - (screen_width() - screen_width() / 4.0) , screen_height() , screen_width(), -screen_height())));
-            world.move_h(self.camera_collider[0], self.speed.x * get_frame_time());
-            world.move_h(self.camera_collider[1], self.speed.x * get_frame_time());
+
+            move_camera_collider(self.camera_collider[0], world, true, false, &pos);
+            move_camera_collider(self.camera_collider[1], world, false, true, &pos);
         }
     }
 
