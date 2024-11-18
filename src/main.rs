@@ -14,7 +14,7 @@ use crate::scenes::main_menu::main_menu;
 
 fn window_conf() -> Conf {
     Conf {
-        window_title: "MumboJumbo".to_owned(),
+        window_title: "JumboMumbo".to_owned(),
         fullscreen: true,
         platform: miniquad::conf::Platform {
             ..Default::default()
