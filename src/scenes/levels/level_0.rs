@@ -26,15 +26,7 @@ pub async fn level_0(scene: &mut Scene, mut textures: &mut BTreeMap<SceneTexture
 
         *level_scene_data = LevelSceneData {
             level: Some(Level::Level0),
-            player: Some(Player {
-                state: 1,
-                collider: world.add_actor(pos, width as i32, height as i32),
-                camera_collider: [
-                    world.add_actor(vec2(0.0, 0.0), (screen_width() / 4.0) as i32, screen_height() as i32),
-                    world.add_actor(vec2(screen_width() - (screen_width() / 4.0), 0.0), (screen_width() / 4.0) as i32, screen_height() as i32),
-                ],
-                speed: vec2(0.0, 0.0),
-            }),
+            player: Some(Player::new(width, height, pos, 0, &mut world).await),
             platforms: vec![Platform{collider: world.add_solid(vec2(0.0 - screen_width(), screen_height()), screen_width()  as i32 * 3, (screen_height() / 32.0) as i32 ), speed: vec2(0.0, 0.0)}],
             world: Some(world),
             triggers: BTreeMap::new(),
