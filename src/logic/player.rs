@@ -6,7 +6,7 @@ use macroquad::math::{vec2, Vec2};
 use macroquad::prelude::{draw_texture_ex, get_frame_time, screen_height, Camera2D, DrawTextureParams, Rect, Texture2D};
 use macroquad::window::screen_width;
 use macroquad_platformer::{Actor, World};
-use crate::TextureKey;
+use crate::utils::enums::TextureKey;
 
 
 

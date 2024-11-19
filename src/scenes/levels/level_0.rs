@@ -1,10 +1,11 @@
 use std::collections::BTreeMap;
-use crate::{Scene, SceneTextureKey, TextureKey};
+use crate::Scene;
 use macroquad::prelude::*;
 use macroquad_platformer::World;
 use crate::logic::player::Player;
 use crate::scenes::levels::levels::{Level, LevelSceneData, Platform, Triggers};
 use crate::utils::debugger::draw_camera_collider;
+use crate::utils::enums::{SceneTextureKey, TextureKey};
 
 pub async fn level_0(scene: &mut Scene, mut textures: &mut BTreeMap<SceneTextureKey, BTreeMap<TextureKey, Vec<Texture2D>>>, level_scene_data: &mut LevelSceneData) {
     clear_background(DARKBLUE);
@@ -17,21 +18,7 @@ pub async fn level_0(scene: &mut Scene, mut textures: &mut BTreeMap<SceneTexture
 
     // Load scene data for right level
     if level_scene_data.level != Some(Level::Level0) {
-        let mut world = World::new();
-        let x = screen_width() / 2.0;
-        let y = screen_height() / 2.0;
-        let width = screen_height() / 12.0;
-        let height = screen_height() / 12.0;
-        let pos = vec2(x, y);
-
-        *level_scene_data = LevelSceneData {
-            level: Some(Level::Level0),
-            player: Some(Player::new(width, height, pos, 0, &mut world).await),
-            platforms: vec![Platform{collider: world.add_solid(vec2(0.0 - screen_width(), screen_height()), screen_width()  as i32 * 3, (screen_height() / 32.0) as i32 ), speed: vec2(0.0, 0.0)}],
-            world: Some(world),
-            triggers: BTreeMap::new(),
-            trigger_locks: BTreeMap::new()
-        };
+        *level_scene_data = layout().await;
     }
 
     let mut world = level_scene_data.world.as_mut().unwrap();
@@ -60,6 +47,44 @@ pub async fn level_0(scene: &mut Scene, mut textures: &mut BTreeMap<SceneTexture
     draw_line(screen_width() / 2.0, screen_height() / 2.0, screen_width() / 2.0 + 100.0, screen_height() / 2.0 + 100.0, 10.0, WHITE);
 }
 
+async fn layout() -> LevelSceneData {
+
+    let mut world = World::new();
+    let x = screen_width() / 2.0;
+    let y = screen_height() / 2.0;
+    let width = screen_height() / 12.0;
+    let height = screen_height() / 12.0;
+    let pos = vec2(x, y);
+    let nv2 = vec2(0.0, 0.0);
+
+    let mut platforms = vec![];
+
+    { // Base Platform
+        let pos = vec2(0.0 - screen_width(), screen_height());
+        let size = vec2(width, height);
+
+        platforms.push(
+            Platform {
+                collider: world.add_solid(pos, screen_width()  as i32 * 3, (screen_height() / 32.0) as i32 ),
+                tile_size: size,
+                tiles: vec![],
+                speed: nv2
+            }
+        );
+    }
+
+
+
+    LevelSceneData {
+        level: Some(Level::Level0),
+        player: Some(Player::new(width, height, pos, 0, &mut world).await),
+        platforms,
+        world: Some(world),
+        triggers: BTreeMap::new(),
+        trigger_locks: BTreeMap::new()
+    }
+}
+
 async fn load_textures(textures: &mut BTreeMap<SceneTextureKey, BTreeMap<TextureKey, Vec<Texture2D>>>) {
     let mut result = BTreeMap::new();
 
@@ -71,6 +96,7 @@ async fn load_textures(textures: &mut BTreeMap<SceneTextureKey, BTreeMap<Texture
         // FilterMode is set to Nearest so it doesn't pixelate when scaling
         player_walk_left.set_filter(FilterMode::Nearest);
         let player_walk_right = load_texture("res/textures/player/player_walk_right.png").await.unwrap();
+
         player_walk_right.set_filter(FilterMode::Nearest);
 
         result.push(player_walk_left);

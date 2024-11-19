@@ -7,6 +7,7 @@ use crate::utils::mathemann::stretch_float_to;
 use crate::utils::text::{draw_text_center, draw_text_centered};
 use macroquad::prelude::*;
 use macroquad::ui::{root_ui, Skin};
+use utils::enums::{SceneTextureKey, TextureKey};
 use crate::scenes::level_selector::level_selector;
 use crate::scenes::levels::levels;
 use crate::scenes::levels::levels::{start_level, LevelSceneData};
@@ -29,16 +30,6 @@ enum Scene {
     /// The i32 is the Page
     LevelSelector(i32),
     Level(levels::Level)
-}
-
-#[derive(Ord, PartialOrd, Eq, PartialEq, Copy, Clone)]
-enum SceneTextureKey {
-    Level0,
-}
-
-#[derive(Ord, PartialOrd, Eq, PartialEq, Copy, Clone)]
-enum TextureKey {
-    Player,
 }
 
 #[macroquad::main(window_conf)]
