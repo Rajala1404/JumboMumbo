@@ -6,6 +6,7 @@ use macroquad::math::{vec2, Vec2};
 use macroquad::prelude::{draw_texture_ex, get_frame_time, screen_height, Camera2D, DrawTextureParams, Rect, Texture2D};
 use macroquad::window::screen_width;
 use macroquad_platformer::{Actor, World};
+use crate::Settings;
 use crate::utils::enums::TextureKey;
 
 
@@ -40,14 +41,14 @@ impl Player {
     }
 
     /// This function handles everything regarding the controls of the player (including moving)
-    pub async fn control(&mut self, world: &mut World) {
+    pub async fn control(&mut self, world: &mut World, settings: &Settings) {
         // gets the current position of the player from the world
         let pos = world.actor_pos(self.collider);
         let on_ground = world.collide_check(self.collider, pos + vec2(0.0, 1.0));
 
         // If the player is not on the ground change velocity of y to 500 (to simulate gravity)
         if on_ground == false {      // multiplies by get_frame_time() so the speed is on all refresh rates the same
-            self.speed.y += screen_height() / 0.3 * get_frame_time();
+            self.speed.y += (4800.0 * settings.gui_scale) * get_frame_time();
         }
 
         // 1 = Left, 2 = Right
@@ -56,11 +57,11 @@ impl Player {
         // Checks if key is currently pressed
         if is_key_down(KeyCode::D) || is_key_down(KeyCode::Right) {
             // If D or Right Arrow is pressed the Player will be moved to the right by increasing the speed on the x-axis
-            self.speed.x = screen_width() / 2.5;
+            self.speed.x = 1200.0 * settings.gui_scale;
             self.state = 1;
             direction = 2;
         } else if is_key_down(KeyCode::A) || is_key_down(KeyCode::Left) {
-            self.speed.x = screen_width() / -2.5;
+            self.speed.x = 1200.0 * -settings.gui_scale;
             self.state = 0;
             direction = 1;
         } else {
@@ -70,7 +71,7 @@ impl Player {
 
         if is_key_down(KeyCode::Space) {
             if on_ground {
-                self.speed.y = screen_height() / -0.9;
+                self.speed.y = 1500.0 * -settings.gui_scale;
             }
         }
 
@@ -103,7 +104,7 @@ impl Player {
 
             move_camera_collider(self.camera_collider[0], world, true, true, &pos, self);
             move_camera_collider(self.camera_collider[1], world, false, false, &pos, self);
-        } else if pos.x + screen_height() / 12.0 + 1.0 >= world.actor_pos(self.camera_collider[1]).x && direction != 1 {
+        } else if pos.x + self.height + 1.0 >= world.actor_pos(self.camera_collider[1]).x && direction != 1 {
             set_camera(&Camera2D::from_display_rect(Rect::new(pos.x + self.width - (screen_width() - screen_width() / 4.0) , screen_height() , screen_width(), -screen_height())));
 
             move_camera_collider(self.camera_collider[0], world, true, false, &pos, self);

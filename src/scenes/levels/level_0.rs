@@ -19,18 +19,16 @@ pub async fn level_0(scene: &mut Scene, mut textures: &mut BTreeMap<SceneTexture
 
     // Load scene data for right level
     if level_scene_data.level != Some(Level::Level0) {
-        *level_scene_data = layout().await;
+        *level_scene_data = layout(settings).await;
     }
 
     let mut world = level_scene_data.world.as_mut().unwrap();
     let player = level_scene_data.player.as_mut().unwrap();
 
-    player.control(&mut world).await;
-    render::render(&level_scene_data, &textures, &settings).await;
+    player.control(&mut world, settings).await;
 
     { // CameraCollider
         if is_key_down(KeyCode::Q) && is_key_down(KeyCode::C) && !level_scene_data.trigger_locks.get(&Triggers::ShowCameraColliders).unwrap_or(&false).to_owned() {
-            println!("Executed!");
             let value = level_scene_data.triggers.get(&Triggers::ShowCameraColliders);
             level_scene_data.triggers.insert(Triggers::ShowCameraColliders, !value.unwrap_or(&false));
             level_scene_data.trigger_locks.insert(Triggers::ShowCameraColliders, true);
@@ -41,20 +39,22 @@ pub async fn level_0(scene: &mut Scene, mut textures: &mut BTreeMap<SceneTexture
         }
 
         if level_scene_data.triggers.get(&Triggers::ShowCameraColliders).unwrap_or(&false).to_owned() {
-            draw_camera_collider(world, player).await;
+            draw_camera_collider(world, player, settings).await;
         }
     }
 
     draw_line(screen_width() / 2.0, screen_height() / 2.0, screen_width() / 2.0 + 100.0, screen_height() / 2.0 + 100.0, 10.0, WHITE);
+
+    render::render_level(level_scene_data, &textures, &settings).await;
 }
 
-async fn layout() -> LevelSceneData {
+async fn layout(settings: &Settings) -> LevelSceneData {
 
     let mut world = World::new();
     let x = screen_width() / 2.0;
     let y = screen_height() / 2.0;
-    let width = screen_height() / 12.0;
-    let height = screen_height() / 12.0;
+    let width = 128.0 * settings.gui_scale;
+    let height = 128.0 * settings.gui_scale;
     let pos = vec2(x, y);
     let nv2 = vec2(0.0, 0.0);
 
