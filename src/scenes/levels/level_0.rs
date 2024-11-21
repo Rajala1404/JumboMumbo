@@ -1,5 +1,6 @@
+use crate::utils::render;
 use std::collections::BTreeMap;
-use crate::Scene;
+use crate::{Scene, Settings};
 use macroquad::prelude::*;
 use macroquad_platformer::World;
 use crate::logic::player::Player;
@@ -7,7 +8,7 @@ use crate::scenes::levels::levels::{Level, LevelSceneData, Platform, Triggers};
 use crate::utils::debugger::draw_camera_collider;
 use crate::utils::enums::{SceneTextureKey, TextureKey};
 
-pub async fn level_0(scene: &mut Scene, mut textures: &mut BTreeMap<SceneTextureKey, BTreeMap<TextureKey, Vec<Texture2D>>>, level_scene_data: &mut LevelSceneData) {
+pub async fn level_0(scene: &mut Scene, mut textures: &mut BTreeMap<SceneTextureKey, BTreeMap<TextureKey, Vec<Texture2D>>>, level_scene_data: &mut LevelSceneData, settings: &Settings) {
     clear_background(DARKBLUE);
 
     // Load textures if not loaded already
@@ -25,7 +26,7 @@ pub async fn level_0(scene: &mut Scene, mut textures: &mut BTreeMap<SceneTexture
     let player = level_scene_data.player.as_mut().unwrap();
 
     player.control(&mut world).await;
-    player.render(&mut world, &textures).await;
+    render::render(&level_scene_data, &textures, &settings).await;
 
     { // CameraCollider
         if is_key_down(KeyCode::Q) && is_key_down(KeyCode::C) && !level_scene_data.trigger_locks.get(&Triggers::ShowCameraColliders).unwrap_or(&false).to_owned() {

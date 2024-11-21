@@ -146,7 +146,7 @@ async fn main() {
         // Depending on the Scene does something else
         match scene {
             Scene::MainMenu => {
-                main_menu(&mut scene).await;
+                main_menu(&mut scene, &settings).await;
             }
             Scene::SettingsMenu => {
 
@@ -155,7 +155,7 @@ async fn main() {
                 level_selector(&mut scene).await;
             }
             Scene::Level(_) => {
-                start_level(&mut scene, &mut textures, &mut level_scene_data).await;
+                start_level(&mut scene, &mut textures, &mut level_scene_data, &settings).await;
             }
         }
 
