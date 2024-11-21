@@ -3,6 +3,9 @@ mod scenes;
 mod logic;
 
 use std::collections::BTreeMap;
+use std::fs;
+use std::io::Write;
+use dirs::config_dir;
 use crate::utils::mathemann::stretch_float_to;
 use crate::utils::text::{draw_text_center, draw_text_centered};
 use macroquad::prelude::*;
@@ -12,6 +15,7 @@ use crate::scenes::level_selector::level_selector;
 use crate::scenes::levels::levels;
 use crate::scenes::levels::levels::{start_level, LevelSceneData};
 use crate::scenes::main_menu::main_menu;
+use serde::{Deserialize, Serialize};
 
 fn window_conf() -> Conf {
     Conf {
@@ -32,8 +36,61 @@ enum Scene {
     Level(levels::Level)
 }
 
+#[derive(PartialEq, Clone, Serialize, Deserialize, Debug)]
+pub struct Settings {
+    /// The Path of the Game's config directory
+    pub path: String,
+    pub gui_scale: f32,
+}
+
+impl Settings {
+    pub async fn new(path: &String) -> Settings {
+        Settings {
+            path: path.to_owned(),
+            gui_scale: 1.0,
+        }
+    }
+}
+
 #[macroquad::main(window_conf)]
 async fn main() {
+    let settings = {
+        let config_path = format!("{}/JumboMumbo", config_dir().expect("Couldn't get config path").to_str().unwrap().to_owned());
+
+        if !fs::exists(&config_path).unwrap() {
+            fs::create_dir(&config_path).expect("Couldn't create settings directory");
+            println!("Creating settings directory at: {}", config_path);
+        }
+        println!("Config path: {}", config_path);
+
+
+
+        let settings = {
+            let file_path = format!("{}/settings.json", config_path);
+            println!("Settings file path: {}", file_path);
+            match fs::exists(&file_path).unwrap() {
+                true => {
+                    let file = fs::File::open(file_path).expect("Couldn't open settings file");
+                    let settings: Settings = serde_json::from_reader(file).expect("Couldn't read settings file");
+
+                    settings
+                },
+                false => {
+                    let settings = Settings::new(&file_path).await;
+                    let mut file = fs::File::create(&file_path).unwrap();
+
+                    let s_settings = serde_json::to_string_pretty(&settings).expect("Couldn't serialize settings");
+                    file.write_all(s_settings.as_bytes()).expect("Couldn't write settings file");
+
+                    settings
+                }
+            }
+        };
+
+        settings
+    };
+    println!("{:?}", settings);
+
     let skin = {
         let font = load_ttf_font("res/fonts/MinimalPixel v2.ttf").await.unwrap();
 
