@@ -16,6 +16,7 @@ use crate::scenes::levels::levels;
 use crate::scenes::levels::levels::{start_level, LevelSceneData};
 use crate::scenes::main_menu::main_menu;
 use serde::{Deserialize, Serialize};
+use crate::scenes::settings_menu::settings_menu;
 
 fn window_conf() -> Conf {
     Conf {
@@ -43,6 +44,13 @@ pub struct Settings {
     pub gui_scale: f32,
 }
 
+
+/// Temporary Saves settings before they get applied
+#[derive(PartialEq, Clone, Serialize, Deserialize, Debug)]
+pub struct TempSettings {
+    pub settings: Settings,
+}
+
 impl Settings {
     pub async fn new(path: &String) -> Settings {
         Settings {
@@ -52,9 +60,11 @@ impl Settings {
     }
 }
 
+// TODO: Implement proper UI
+
 #[macroquad::main(window_conf)]
 async fn main() {
-    let settings = {
+    let mut settings = {
         let config_path = format!("{}/JumboMumbo", config_dir().expect("Couldn't get config path").to_str().unwrap().to_owned());
 
         if !fs::exists(&config_path).unwrap() {
@@ -91,14 +101,15 @@ async fn main() {
     };
     println!("{:?}", settings);
 
+    let mut temp_settings = TempSettings { settings: settings.clone() };
+
     let skin = {
         let font = load_ttf_font("res/fonts/MinimalPixel v2.ttf").await.unwrap();
 
         let window_style = root_ui()
             .style_builder()
             .background(load_image("res/ui/window_background.png").await.expect("Error loading res/ui/window_background.png"))
-            .background_margin(RectOffset::new(20.0, 20.0, 10.0, 10.0))
-            .margin(RectOffset::new(-20.0, -30.0, 0.0, 0.0))
+            .background_margin(RectOffset::new(180.0, 180.0, 180.0, 180.0))
             .build();
 
         let button_style = root_ui()
@@ -107,7 +118,6 @@ async fn main() {
             .background_hovered(load_image("res/ui/button/background_hovered.png").await.expect("Error loading res/ui/button/background_hovered.png"))
             .background_clicked(load_image("res/ui/button/background_clicked.png").await.expect("Error loading res/ui/button/background_clicked.png"))
             .background_margin(RectOffset::new(70.0, 70.0, 70.0, 70.0))
-            .margin(RectOffset::new(screen_width() / 100.0, screen_width() / 100.0, screen_height() / 100.0, screen_height() / 100.0))
             .with_font(&font)
             .unwrap()
             .text_color(WHITE)
@@ -149,7 +159,7 @@ async fn main() {
                 main_menu(&mut scene, &settings).await;
             }
             Scene::SettingsMenu => {
-
+                settings_menu(&mut scene, &mut settings, &mut temp_settings).await;
             }
             Scene::LevelSelector(_) => {
                 level_selector(&mut scene).await;

@@ -9,8 +9,13 @@ use crate::utils::text::draw_text_centered;
 pub async fn main_menu(scene: &mut Scene, settings: &Settings) {
     draw_text_centered("MumboJumbo", screen_height() / 8.0, 150.0 * settings.gui_scale, Color::from_rgba(255, 255, 255, 255)).await;
 
-    // Executes the code inside the brackets and sets the Scene to LevelSelector on page 0
+    // Executes the code inside the brackets
     if root_ui().button(Some(Vec2 { x: screen_width() / 2.0, y: screen_height() / 2.0 }), "Select Level") {
+        // Sets the Scene to LevelSelector on page 0
         *scene = Scene::LevelSelector(0)
+    }
+
+    if root_ui().button(Some(Vec2 { x: screen_width() / 2.0, y: screen_height() / 2.0 + screen_height() / 4.0 }), "Settings") {
+        *scene = Scene::SettingsMenu
     }
 }
