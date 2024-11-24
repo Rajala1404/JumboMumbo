@@ -47,8 +47,10 @@ impl Player {
         let on_ground = world.collide_check(self.collider, pos + vec2(0.0, 1.0));
 
         // If the player is not on the ground change velocity of y to 500 (to simulate gravity)
-        if on_ground == false {      // multiplies by get_frame_time() so the speed is on all refresh rates the same
+        if !on_ground {      // multiplies by get_frame_time() so the speed is on all refresh rates the same
             self.speed.y += (4800.0 * settings.gui_scale) * get_frame_time();
+        } else {
+            self.speed.y = 0.0;
         }
 
         // 1 = Left, 2 = Right

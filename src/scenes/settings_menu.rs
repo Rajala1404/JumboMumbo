@@ -4,7 +4,8 @@ use macroquad::math::{vec2, Vec2};
 use macroquad::prelude::screen_height;
 use macroquad::ui::{root_ui, widgets};
 use macroquad::window::screen_width;
-use crate::{Scene, Settings, TempSettings};
+use crate::{Settings, TempSettings};
+use crate::utils::enums::Scene;
 use crate::utils::text::draw_text_centered;
 
 pub async fn settings_menu(scene: &mut Scene, settings: &mut Settings, temp_settings: &mut TempSettings) {
