@@ -1,4 +1,3 @@
-use macroquad::math::i32;
 use crate::scenes::levels::structs;
 
 #[derive(Ord, PartialOrd, Eq, PartialEq, Copy, Clone)]
@@ -13,6 +12,10 @@ pub enum TextureKey {
 
     // Platforms
     Platform0,
+
+    // Collectibles
+    /// This texture needs to be animated
+    Coin0,
 }
 
 pub enum Scene {
@@ -25,19 +28,41 @@ pub enum Scene {
 
 #[derive(Copy, Clone, PartialEq)]
 pub struct Animation {
-    animation_type: AnimationType,
-    /// The relative floating position of the current collectible
-    pub pos_f: f32
+    pub animation_type: AnimationType,
+    /// Contains the current index or frame of the animation (should be -1 at first)
+    pub index: i32,
 }
 
 impl Animation {
-    pub fn animate(&mut self) {
+    pub fn new(animation_type: AnimationType) -> Self {
+        Self {animation_type, index: -1}
+    }
 
+    /// Executes the current animation <b>
+    /// Depending on what animation you are trying to animate you may need to do some steps manually <br>
+    /// For more information about what to do please refer to the documentation of the chosen animation
+    pub async fn animate(&mut self) {
+        match self.animation_type {
+            AnimationType::Cycle(start, end) => {
+                // Set index to start (if not already done)
+                if self.index == -1 {
+                    self.index = start as i32
+                }
+
+                // Reset index if above max
+                if self.index > end as i32 {
+                    self.index = start as i32;
+                }
+            }
+        }
     }
 }
 
 #[derive(Copy, Clone, PartialEq)]
 pub enum AnimationType {
-    /// Floating animation that creates a floating effect by letting objects move up and down by the defined px
-    Floating(f32),
+    /// Goes through a fixed number of textures <br>
+    /// For this animation the index represents the current texture index. <br>
+    /// **This animation needs to be rendered manually** <br>
+    /// The first [u32] represents the start and the last the end
+    Cycle(u32, u32)
 }

@@ -35,7 +35,7 @@ pub async fn level_0(scene: &mut Scene, mut textures: &mut BTreeMap<SceneTexture
             level_scene_data.trigger_locks.insert(Triggers::ShowCameraColliders, true);
         }
 
-        if is_key_released(KeyCode::Q) || is_key_released(KeyCode::C) {
+        if is_key_released(KeyCode::Q) || is_key_released(KeyCode::C) && level_scene_data.trigger_locks.get(&Triggers::ShowCameraColliders).unwrap_or(&false).to_owned() {
             level_scene_data.trigger_locks.insert(Triggers::ShowCameraColliders, false);
         }
 

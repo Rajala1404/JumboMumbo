@@ -3,10 +3,10 @@
 use macroquad::math::{vec2, Vec2};
 use macroquad_platformer::{Actor, Solid, World};
 use std::collections::BTreeMap;
-use macroquad::prelude::{draw_texture_ex, DrawTextureParams, Texture2D};
+use macroquad::prelude::{draw_texture, draw_texture_ex, DrawTextureParams, Texture2D};
 use macroquad::color::WHITE;
 use crate::logic::player::Player;
-use crate::utils::enums::{Animation, TextureKey};
+use crate::utils::enums::{Animation, AnimationType, TextureKey};
 
 /// This enum defines all existing levels
 #[derive(PartialEq, Clone)]
@@ -117,7 +117,7 @@ impl PlatformTile {
 pub struct Collectible {
     pub collected: bool,
     pub collider: Actor,
-    pub texture_index: i32,
+    pub texture_key: TextureKey,
     pub animation: Animation,
     pub speed: Vec2,
 }
@@ -133,7 +133,16 @@ impl Collectible {
         }
     }
 
-    pub async fn render(&self, textures: &BTreeMap<TextureKey, Vec<Texture2D>>, world: &World) {
+    pub async fn render(&mut self, textures: &BTreeMap<TextureKey, Vec<Texture2D>>, world: &World) {
+        let pos = world.actor_pos(self.collider);
 
+        match self.animation.animation_type {
+            AnimationType::Cycle(_, _) => {
+                self.animation.animate().await;
+
+                let texture = textures.get(&self.texture_key).unwrap().get(self.animation.index as usize).unwrap();
+                draw_texture(texture, pos.x, pos.y, WHITE);
+            }
+        }
     }
 }
