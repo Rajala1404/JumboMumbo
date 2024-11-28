@@ -1,7 +1,7 @@
 use std::collections::BTreeMap;
 use macroquad::prelude::Texture2D;
 use macroquad_platformer::World;
-use crate::scenes::levels::levels::{LevelSceneData};
+use crate::scenes::levels::structs::LevelSceneData;
 use crate::Settings;
 use crate::utils::enums::TextureKey;
 

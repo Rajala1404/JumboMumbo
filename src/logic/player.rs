@@ -44,7 +44,15 @@ impl Player {
     pub async fn control(&mut self, world: &mut World, settings: &Settings) {
         // gets the current position of the player from the world
         let pos = world.actor_pos(self.collider);
+        // Checks if the player is on another collider by checking if one collider is 1px beyond him
         let on_ground = world.collide_check(self.collider, pos + vec2(0.0, 1.0));
+        // Checks if the player is hitting a sealing by checking if one collider is 1px above him
+        let sealing_hit = world.collide_check(self.collider, pos + vec2(0.0, -1.0));
+
+        // If the player is hitting the sealing reset the velocity to 0
+        if sealing_hit {
+            self.speed.y = (100.0 * settings.gui_scale) * get_frame_time()
+        }
 
         // If the player is not on the ground change velocity of y to 500 (to simulate gravity)
         if !on_ground {      // multiplies by get_frame_time() so the speed is on all refresh rates the same
@@ -59,11 +67,11 @@ impl Player {
         // Checks if key is currently pressed
         if is_key_down(KeyCode::D) || is_key_down(KeyCode::Right) {
             // If D or Right Arrow is pressed the Player will be moved to the right by increasing the speed on the x-axis
-            self.speed.x = 1200.0 * settings.gui_scale;
+            self.speed.x = 1300.0 * settings.gui_scale;
             self.state = 1;
             direction = 2;
         } else if is_key_down(KeyCode::A) || is_key_down(KeyCode::Left) {
-            self.speed.x = 1200.0 * -settings.gui_scale;
+            self.speed.x = 1300.0 * -settings.gui_scale;
             self.state = 0;
             direction = 1;
         } else {
@@ -73,7 +81,7 @@ impl Player {
 
         if is_key_down(KeyCode::Space) {
             if on_ground {
-                self.speed.y = 1500.0 * -settings.gui_scale;
+                self.speed.y = 1900.0 * -settings.gui_scale;
             }
         }
 

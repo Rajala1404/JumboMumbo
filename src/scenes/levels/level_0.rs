@@ -4,7 +4,7 @@ use crate::Settings;
 use macroquad::prelude::*;
 use macroquad_platformer::World;
 use crate::logic::player::Player;
-use crate::scenes::levels::levels::{Level, LevelSceneData, Platform, PlatformTile, Triggers};
+use crate::scenes::levels::structs::{Level, LevelSceneData, Platform, PlatformTile, Triggers};
 use crate::utils::debugger::draw_camera_collider;
 use crate::utils::enums::{Scene, SceneTextureKey, TextureKey};
 use crate::utils::texture::{get_platform_path, load_textures_from_tile_map};
@@ -44,7 +44,9 @@ pub async fn level_0(scene: &mut Scene, mut textures: &mut BTreeMap<SceneTexture
         }
     }
 
-    draw_line(screen_width() / 2.0, screen_height() / 2.0, screen_width() / 2.0 + 100.0, screen_height() / 2.0 + 100.0, 10.0, WHITE);
+    if is_key_down(KeyCode::Escape) {
+        *scene = Scene::LevelSelector(0);
+    }
 
     render::render_level(level_scene_data, &textures, &settings, level_scene_data.world.as_ref().unwrap()).await;
 }
@@ -62,9 +64,8 @@ async fn layout(settings: &Settings) -> LevelSceneData {
 
     let mut platforms = vec![];
 
-    { // Base Platform
+    { // Base Platform (Collider)
         let pos = vec2(0.0 - screen_width(), screen_height());
-        let size = vec2(width, height);
 
         platforms.push(
             Platform {
@@ -75,80 +76,60 @@ async fn layout(settings: &Settings) -> LevelSceneData {
             }
         );
     }
-    { // Test Platform
-        let pos = vec2(screen_width() / 2.0, screen_height() / 2.0);
-        let width = width * 3.0;
-        let height = height * 3.0;
+    { // Base Platform 1
+        let pos = vec2(-screen_width() / 2.0, screen_height() - size.y);
 
-        let mut tiles = vec![];
-        // Just all keys
-        for i in 0..9 {
-            let pos = {
-                match i {
-                    0 => vec2(0.0, 0.0),
-                    1 => vec2(1.0, 0.0),
-                    2 => vec2(2.0, 0.0),
-                    3 => vec2(0.0, 1.0),
-                    4 => vec2(1.0, 1.0),
-                    5 => vec2(2.0, 1.0),
-                    6 => vec2(0.0, 2.0),
-                    7 => vec2(1.0, 2.0),
-                    8 => vec2(2.0, 2.0),
-                    _ => unimplemented!()
-                }
-            };
-            tiles.push(PlatformTile::new(TextureKey::Platform0, i, pos).await)
+        let mut tiles = vec![
+            PlatformTile {
+                texture_key: TextureKey::Platform0,
+                texture_index: 0,
+                pos: vec2(0.0, 0.0),
+            },
+        ];
+
+        for i in 1..40 {
+            tiles.push(PlatformTile{
+                texture_key: TextureKey::Platform0,
+                texture_index: 1,
+                pos: vec2(i as f32, 0.0),
+            })
         }
 
-        let platform = Platform::new(
-            world.add_solid(pos, width as i32, height as i32),
-            size,
+        tiles.push(PlatformTile{
+            texture_key: TextureKey::Platform0,
+            texture_index: 2,
+            pos: vec2(40.0, 0.0),
+        });
+
+        platforms.push(Platform{
+            collider: world.add_solid(pos, (width * 41.0) as i32, height as i32),
+            tile_size: size,
             tiles,
-            nv2
-        ).await;
-
-        platforms.push(platform);
+            speed: nv2
+        });
     }
-    { // Test Platform 2
-        let pos = vec2(screen_width() / 4.0, screen_height() - screen_height() / 4.0);
 
-        let width = width * 3.0;
-        let height = height * 3.0;
+    platforms.push(Platform::floating(
+        4,
+        size,
+        TextureKey::Platform0,
+        vec2(size.x * 5.0, screen_height() - size.y * 3.0 - size.y / 4.0),
+        &mut world
+    ).await);
 
-        let mut tiles = vec![];
-        // Just all keys
-        for i in 0..9 {
-            let pos = {
-                match i {
-                    0 => vec2(0.0, 0.0),
-                    1 => vec2(1.0, 0.0),
-                    2 => vec2(2.0, 0.0),
-                    3 => vec2(0.0, 1.0),
-                    4 => vec2(1.0, 1.0),
-                    5 => vec2(2.0, 1.0),
-                    6 => vec2(0.0, 2.0),
-                    7 => vec2(1.0, 2.0),
-                    8 => vec2(2.0, 2.0),
-                    _ => unimplemented!()
-                }
-            };
-            tiles.push(PlatformTile::new(TextureKey::Platform0, i, pos).await)
-        }
-
-        let platform = Platform::new(
-            world.add_solid(pos, width as i32, height as i32),
-            size,
-            tiles,
-            nv2
-        ).await;
-
-        platforms.push(platform);
-    }
+    platforms.push(Platform::floating(
+        3,
+        size,
+        TextureKey::Platform0,
+        vec2(size.x * 12.0, screen_height() - size.y * 5.0 - size.y / 4.0),
+        &mut world
+    ).await);
 
     LevelSceneData {
         level: Some(Level::Level0),
         player: Some(Player::new(width, height, vec2(pos.x, nv2.y), 0, &mut world).await),
         platforms,
+        collectible: vec![],
         world: Some(world),
         triggers: BTreeMap::new(),
         trigger_locks: BTreeMap::new()

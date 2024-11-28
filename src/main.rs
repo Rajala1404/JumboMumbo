@@ -12,9 +12,10 @@ use macroquad::prelude::*;
 use macroquad::ui::{root_ui, Skin};
 use utils::enums::{Scene, SceneTextureKey, TextureKey};
 use crate::scenes::level_selector::level_selector;
-use crate::scenes::levels::levels::{start_level, LevelSceneData};
+use crate::scenes::levels::levels::start_level;
 use crate::scenes::main_menu::main_menu;
 use serde::{Deserialize, Serialize};
+use scenes::levels::structs::LevelSceneData;
 use crate::scenes::settings_menu::settings_menu;
 
 fn window_conf() -> Conf {
@@ -139,7 +140,7 @@ async fn main() {
     // Holds the current scene
     let mut scene = Scene::MainMenu;
     // Holds all data of scenes (score, enemies ...)
-    let mut level_scene_data = LevelSceneData {level: None, player: None, platforms: vec![], world: None, triggers: BTreeMap::new(), trigger_locks: BTreeMap::new() };
+    let mut level_scene_data = LevelSceneData {level: None, player: None, platforms: vec![],collectible: vec![], world: None, triggers: BTreeMap::new(), trigger_locks: BTreeMap::new() };
     // Holds all textures
     let mut textures = BTreeMap::<SceneTextureKey, BTreeMap<TextureKey, Vec<Texture2D>>>::new();
     loop {
