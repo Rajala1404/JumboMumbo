@@ -163,7 +163,7 @@ async fn load_textures(textures: &mut BTreeMap<SceneTextureKey, BTreeMap<Texture
     };
     result.insert(TextureKey::Platform0, platform_0);
 
-
+    // let coin
 
     // Insert result into the global texture map
     textures.insert(SceneTextureKey::Level0, result);
