@@ -3,7 +3,7 @@
 use macroquad::math::{vec2, Vec2};
 use macroquad_platformer::{Actor, Solid, World};
 use std::collections::BTreeMap;
-use macroquad::prelude::{draw_texture, draw_texture_ex, DrawTextureParams, Texture2D};
+use macroquad::prelude::{draw_texture_ex, DrawTextureParams, Texture2D};
 use macroquad::color::WHITE;
 use crate::logic::player::Player;
 use crate::utils::enums::{Animation, AnimationType, TextureKey};
@@ -24,7 +24,7 @@ pub struct LevelSceneData {
     pub level: Option<Level>,
     pub player: Option<Player>,
     pub platforms: Vec<Platform>,
-    pub collectible: Vec<Collectible>,
+    pub collectibles: Vec<Collectible>,
     pub world: Option<World>,
     /// Saves temporary triggers / settings
     pub triggers: BTreeMap<Triggers, bool>,
@@ -119,16 +119,19 @@ pub struct Collectible {
     pub collider: Actor,
     pub texture_key: TextureKey,
     pub animation: Animation,
+    pub size: Vec2,
     pub speed: Vec2,
 }
 
 impl Collectible {
+    // TODO: Implement own collider system
     /// Runs all checks that may get called onto a collectible
     pub async fn check(&mut self, world: &World) {
         let pos = world.actor_pos(self.collider);
         // Check if the collectible collides with another thing
         let touched = world.collide_check(self.collider, pos);
         if touched {
+            println!("Collectible: Ahhh i was touched");
             self.collected = true;
         }
     }
@@ -139,9 +142,17 @@ impl Collectible {
         match self.animation.animation_type {
             AnimationType::Cycle(_, _) => {
                 self.animation.animate().await;
-
                 let texture = textures.get(&self.texture_key).unwrap().get(self.animation.index as usize).unwrap();
-                draw_texture(texture, pos.x, pos.y, WHITE);
+                draw_texture_ex(
+                    texture,
+                    pos.x,
+                    pos.y,
+                    WHITE,
+                    DrawTextureParams {
+                        dest_size: Some(self.size),
+                        ..Default::default()
+                    },
+                );
             }
         }
     }

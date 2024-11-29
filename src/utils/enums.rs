@@ -1,3 +1,4 @@
+use macroquad::time::get_time;
 use crate::scenes::levels::structs;
 
 #[derive(Ord, PartialOrd, Eq, PartialEq, Copy, Clone)]
@@ -29,13 +30,14 @@ pub enum Scene {
 #[derive(Copy, Clone, PartialEq)]
 pub struct Animation {
     pub animation_type: AnimationType,
+    pub last_time: f64,
     /// Contains the current index or frame of the animation (should be -1 at first)
     pub index: i32,
 }
 
 impl Animation {
     pub fn new(animation_type: AnimationType) -> Self {
-        Self {animation_type, index: -1}
+        Self {animation_type, last_time: get_time(), index: -1}
     }
 
     /// Executes the current animation <b>
@@ -46,12 +48,24 @@ impl Animation {
             AnimationType::Cycle(start, end) => {
                 // Set index to start (if not already done)
                 if self.index == -1 {
-                    self.index = start as i32
+                    self.index = start as i32 - 1
                 }
 
-                // Reset index if above max
-                if self.index > end as i32 {
-                    self.index = start as i32;
+                if self.last_time < get_time() - 0.1 {
+
+                    // Reset index if above max
+                    if self.index < end as i32 {
+                        self.index += 1;
+                    } else {
+                        self.index = start as i32
+                    }
+
+                    self.last_time = get_time();
+                }
+
+                // Set index to start (if not already done)
+                if self.index == -1 {
+                    self.index = start as i32
                 }
             }
         }

@@ -131,16 +131,16 @@ async fn main() {
 
     // Runs to make sure the screen size is the right one
     for _ in 0..4 {
-        println!("{}x{}", screen_width(), screen_height());
         next_frame().await
     }
+    println!("Resolution: {}x{}", screen_width(), screen_height());
 
     loading().await;
 
     // Holds the current scene
     let mut scene = Scene::MainMenu;
     // Holds all data of scenes (score, enemies ...)
-    let mut level_scene_data = LevelSceneData {level: None, player: None, platforms: vec![],collectible: vec![], world: None, triggers: BTreeMap::new(), trigger_locks: BTreeMap::new() };
+    let mut level_scene_data = LevelSceneData {level: None, player: None, platforms: vec![], collectibles: vec![], world: None, triggers: BTreeMap::new(), trigger_locks: BTreeMap::new() };
     // Holds all textures
     let mut textures = BTreeMap::<SceneTextureKey, BTreeMap<TextureKey, Vec<Texture2D>>>::new();
     loop {
@@ -169,10 +169,12 @@ async fn main() {
 /// 100% True Loading Screen that is definitely not based on frames
 async fn loading() {
     let mut last_update = 1.0;
-    let speed = 0.0005;
+    let speed = 0.000005;
     let mut last_opacity = 255;
     let mut opacity_up = false;
     let mut runtime = 0.0;
+
+    let mut alpha = 0;
 
     loop {
         if get_time() - last_update > speed {
@@ -180,10 +182,10 @@ async fn loading() {
             if runtime > 100.0 {
                 break
             } else {
-                runtime += 0.5;
+                runtime += 80.0 * get_frame_time();
             }
             // Counts up if the alpha is larger than 0 and counts down
-            let alpha = {
+            alpha = {
                 if opacity_up {
                     if last_opacity < 255 {
                         last_opacity + 4
@@ -201,19 +203,20 @@ async fn loading() {
                 }
             };
             last_opacity = alpha;
-            draw_text_center("Welcome to MumboJumbo!", screen_height() / 8.0, Color::from_rgba(255, 255, 255, 255)).await;
-            draw_text_centered("Loading...", screen_height() / 4.0, screen_height() / 16.0, Color::from_rgba(255, 255, 255, alpha)).await;
+        }
 
-            { // Loading Bar
-                let width = screen_width() / 4.0;
-                let height = screen_height() / 1.5;
+        draw_text_center("Welcome to MumboJumbo!", screen_height() / 8.0, Color::from_rgba(255, 255, 255, 255)).await;
+        draw_text_centered("Loading...", screen_height() / 4.0, screen_height() / 16.0, Color::from_rgba(255, 255, 255, alpha)).await;
+
+        { // Loading Bar
+            let width = screen_width() / 4.0;
+            let height = screen_height() / 1.5;
 
 
-                // Stretches the runtime float (0.0 - 100.0) to 2/4 of the screen width and adds it to the start point of the loading bar
-                let length = width + stretch_float_to(runtime, 100.0, width * 2.0).await;
+            // Stretches the runtime float (0.0 - 100.0) to 2/4 of the screen width and adds it to the start point of the loading bar
+            let length = width + stretch_float_to(runtime, 100.0, width * 2.0).await;
 
-                draw_line(width, height, length, height, screen_height() / 32.0, WHITE);
-            }
+            draw_line(width, height, length, height, screen_height() / 32.0, WHITE);
         }
         next_frame().await
     }

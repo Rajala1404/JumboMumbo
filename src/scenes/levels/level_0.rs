@@ -1,13 +1,14 @@
-use crate::utils::render;
+use crate::scenes::levels::helper;
 use std::collections::BTreeMap;
 use crate::Settings;
 use macroquad::prelude::*;
 use macroquad_platformer::World;
+use stopwatch2::Stopwatch;
 use crate::logic::player::Player;
-use crate::scenes::levels::structs::{Level, LevelSceneData, Platform, PlatformTile, Triggers};
+use crate::scenes::levels::structs::{Collectible, Level, LevelSceneData, Platform, PlatformTile, Triggers};
 use crate::utils::debugger::draw_camera_collider;
-use crate::utils::enums::{Scene, SceneTextureKey, TextureKey};
-use crate::utils::texture::{get_platform_path, load_textures_from_tile_map};
+use crate::utils::enums::{Animation, AnimationType, Scene, SceneTextureKey, TextureKey};
+use crate::utils::texture::{get_texture_path, load_textures_from_tile_map};
 
 pub async fn level_0(scene: &mut Scene, mut textures: &mut BTreeMap<SceneTextureKey, BTreeMap<TextureKey, Vec<Texture2D>>>, level_scene_data: &mut LevelSceneData, settings: &Settings) {
     clear_background(DARKBLUE);
@@ -48,11 +49,11 @@ pub async fn level_0(scene: &mut Scene, mut textures: &mut BTreeMap<SceneTexture
         *scene = Scene::LevelSelector(0);
     }
 
-    render::render_level(level_scene_data, &textures, &settings, level_scene_data.world.as_ref().unwrap()).await;
+    helper::tick_level(level_scene_data, settings).await;
+    helper::render_level(level_scene_data, &textures, settings).await;
 }
 
 async fn layout(settings: &Settings) -> LevelSceneData {
-
     let mut world = World::new();
     let x = screen_width() / 2.0;
     let y = screen_height() / 2.0;
@@ -63,6 +64,7 @@ async fn layout(settings: &Settings) -> LevelSceneData {
     let nv2 = vec2(0.0, 0.0);
 
     let mut platforms = vec![];
+    let mut collectibles = vec![];
 
     { // Base Platform (Collider)
         let pos = vec2(0.0 - screen_width(), screen_height());
@@ -125,11 +127,23 @@ async fn layout(settings: &Settings) -> LevelSceneData {
         &mut world
     ).await);
 
+    { // Coin above Floating Platform
+        let size = vec2(size.x, size.y);
+        collectibles.push(Collectible {
+            collected: false,
+            collider: world.add_actor(vec2(size.x * 12.0, screen_height() - size.y * 3.0), size.x as i32, size.y as i32),
+            texture_key: TextureKey::Coin0,
+            animation: Animation::new(AnimationType::Cycle(0, 5)),
+            size,
+            speed: nv2
+        });
+    }
+
     LevelSceneData {
         level: Some(Level::Level0),
         player: Some(Player::new(width, height, vec2(pos.x, nv2.y), 0, &mut world).await),
         platforms,
-        collectible: vec![],
+        collectibles,
         world: Some(world),
         triggers: BTreeMap::new(),
         trigger_locks: BTreeMap::new()
@@ -137,8 +151,11 @@ async fn layout(settings: &Settings) -> LevelSceneData {
 }
 
 async fn load_textures(textures: &mut BTreeMap<SceneTextureKey, BTreeMap<TextureKey, Vec<Texture2D>>>) {
-    let mut result = BTreeMap::new();
+    let mut stopwatch = Stopwatch::default();
+    println!("Loading textures...");
+    stopwatch.start();
 
+    let mut result = BTreeMap::new();
     // Load player textures
     let player = {
         let mut result = Vec::new();
@@ -146,8 +163,8 @@ async fn load_textures(textures: &mut BTreeMap<SceneTextureKey, BTreeMap<Texture
         let player_walk_left = load_texture("res/textures/player/player_walk_left.png").await.unwrap();
         // FilterMode is set to Nearest so it doesn't pixelate when scaling
         player_walk_left.set_filter(FilterMode::Nearest);
-        let player_walk_right = load_texture("res/textures/player/player_walk_right.png").await.unwrap();
 
+        let player_walk_right = load_texture("res/textures/player/player_walk_right.png").await.unwrap();
         player_walk_right.set_filter(FilterMode::Nearest);
 
         result.push(player_walk_left);
@@ -157,14 +174,22 @@ async fn load_textures(textures: &mut BTreeMap<SceneTextureKey, BTreeMap<Texture
     };
     result.insert(TextureKey::Player, player);
 
+
     let platform_0 = {
-        let path = get_platform_path(TextureKey::Platform0).await;
+        let path = get_texture_path(TextureKey::Platform0).await;
         load_textures_from_tile_map(path).await
     };
     result.insert(TextureKey::Platform0, platform_0);
 
-    // let coin
+    let coin_0 = {
+        let path = get_texture_path(TextureKey::Coin0).await;
+        load_textures_from_tile_map(path).await
+    };
+    result.insert(TextureKey::Coin0, coin_0);
 
     // Insert result into the global texture map
     textures.insert(SceneTextureKey::Level0, result);
+
+    stopwatch.stop();
+    println!("Loaded textures! Took: {}ms", stopwatch.elapsed().as_millis());
 }

@@ -31,7 +31,7 @@ impl Rect {
 /// `position` is the position that is inside the json <br>
 /// The json must have the same name as the texture and only PNG textures are supported
 pub async fn load_textures_from_tile_map(path: String) -> Vec<Texture2D> {
-    println!("Loading textures from '{}'", path);
+    println!("Loading texture tile map from '{}'", path);
     #[derive(Deserialize)]
     struct JsonMap {
         positions: Vec<Rect>
@@ -55,12 +55,11 @@ pub async fn load_textures_from_tile_map(path: String) -> Vec<Texture2D> {
     result
 }
 
-/// Returns the path of the provided [TextureKey] of Platform (without extension)
-pub async fn get_platform_path(key: TextureKey) -> String {
+/// Returns the path of the provided [TextureKey] of a Texture (without extension)
+pub async fn get_texture_path(key: TextureKey) -> String {
     match key {
-        TextureKey::Platform0 => {
-            String::from("./res/textures/platforms/platform_0")
-        }
+        TextureKey::Platform0 => String::from("./res/textures/platforms/platform_0"),
+        TextureKey::Coin0 => String::from("./res/textures/items/coin_0"),
         _ => {
             unimplemented!()
         }

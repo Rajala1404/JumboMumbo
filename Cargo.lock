@@ -11,6 +11,7 @@ dependencies = [
  "macroquad-platformer",
  "serde",
  "serde_json",
+ "stopwatch2",
 ]
 
 [[package]]
@@ -396,6 +397,12 @@ checksum = "dbff4acf519f630b3a3ddcfaea6c06b42174d9a44bc70c620e9ed1649d58b82a"
 dependencies = [
  "version_check",
 ]
+
+[[package]]
+name = "stopwatch2"
+version = "2.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "911ece10388afa48417f99e01df038460b6249a3ee0255f6446a6881b702fbb4"
 
 [[package]]
 name = "syn"
