@@ -1,30 +1,8 @@
 use macroquad::miniquad::FilterMode;
 use macroquad::texture::{load_image, Texture2D};
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 use crate::utils::enums::TextureKey;
-
-#[derive(Clone, Copy, Debug, Default, PartialEq, Serialize, Deserialize)]
-pub struct Rect {
-    pub x: f32,
-    pub y: f32,
-    pub w: f32,
-    pub h: f32,
-}
-
-impl Rect {
-    pub fn new(x: f32, y: f32, w: f32, h: f32) -> Self {
-        Self { x, y, w, h }
-    }
-
-    pub fn to_macro_rect(&self) -> macroquad::math::Rect {
-        macroquad::math::Rect::new(
-            self.x,
-            self.y,
-            self.w,
-            self.h,
-        )
-    }
-}
+use crate::utils::structs::Rect;
 
 /// Loads a texture from a texture map by using a predefined json to get the position of the wanted texture <br>
 /// `path` is the path of the texture without a file extension <br>

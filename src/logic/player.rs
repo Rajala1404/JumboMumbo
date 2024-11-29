@@ -6,6 +6,7 @@ use macroquad::math::{vec2, Vec2};
 use macroquad::prelude::{draw_texture_ex, get_frame_time, screen_height, Camera2D, DrawTextureParams, Rect, Texture2D};
 use macroquad::window::screen_width;
 use macroquad_platformer::{Actor, World};
+use crate::logic::collider::Collider;
 use crate::Settings;
 use crate::utils::enums::TextureKey;
 
@@ -21,6 +22,7 @@ pub struct Player {
     /// 1: Right
     pub state: i8,
     pub collider: Actor,
+    pub collider_new: Collider,
     pub camera_collider: [Actor; 2],
     pub speed: Vec2,
 }
@@ -32,6 +34,7 @@ impl Player {
             height,
             state,
             collider: world.add_actor(pos, width as i32, height as i32),
+            collider_new: Collider::new_actor(pos, width, height).await,
             camera_collider: [
                 world.add_actor(vec2(0.0, 0.0), (screen_width() / 4.0) as i32, screen_height() as i32),
                 world.add_actor(vec2(screen_width() - (screen_width() / 4.0), 0.0), (screen_width() / 4.0) as i32, screen_height() as i32),
