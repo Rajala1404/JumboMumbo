@@ -205,7 +205,7 @@ async fn loading() {
             last_opacity = alpha;
         }
 
-        draw_text_center("Welcome to MumboJumbo!", screen_height() / 8.0, Color::from_rgba(255, 255, 255, 255)).await;
+        draw_text_center("Welcome to JumboMumbo!", screen_height() / 8.0, Color::from_rgba(255, 255, 255, 255)).await;
         draw_text_centered("Loading...", screen_height() / 4.0, screen_height() / 16.0, Color::from_rgba(255, 255, 255, alpha)).await;
 
         { // Loading Bar

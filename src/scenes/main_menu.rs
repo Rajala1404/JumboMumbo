@@ -8,7 +8,7 @@ use crate::utils::text::draw_text_centered;
 
 /// This function gets executed if the Main Menu is set
 pub async fn main_menu(scene: &mut Scene, settings: &Settings) {
-    draw_text_centered("MumboJumbo", screen_height() / 8.0, 150.0 * settings.gui_scale, Color::from_rgba(255, 255, 255, 255)).await;
+    draw_text_centered("JumboMumbo", screen_height() / 8.0, 150.0 * settings.gui_scale, Color::from_rgba(255, 255, 255, 255)).await;
 
     // Executes the code inside the brackets
     if root_ui().button(Some(Vec2 { x: screen_width() / 2.0, y: screen_height() / 2.0 }), "Select Level") {
