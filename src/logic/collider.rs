@@ -14,6 +14,7 @@ pub enum ColliderType {
     Actor,
     Solid,
     Collectible,
+    Trigger,
 }
 
 impl Collider {
@@ -30,6 +31,11 @@ impl Collider {
     pub async fn new_collectible(pos: Vec2, width: f32, height: f32) -> Self {
         let rect = Rect::new(pos.x, pos.y, width, height).await;
         Self { rect, collider_type: ColliderType::Collectible}
+    }
+
+    pub async fn new_trigger(pos: Vec2, width: f32, height: f32) -> Self {
+        let rect = Rect::new(pos.x, pos.y, width, height).await;
+        Self { rect, collider_type: ColliderType::Trigger}
     }
 
     /// Checks if the collider gets touched by the player
