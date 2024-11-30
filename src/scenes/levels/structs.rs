@@ -129,12 +129,11 @@ impl Collectible {
     pub async fn check(&mut self, player: &Player) {
         // Check if the collectible collides with another thing
         if self.collider.touched_by_player(player).await {
-            println!("Collectible: Ahhh i was touched");
             self.collected = true;
         }
     }
 
-    pub async fn render(&mut self, textures: &BTreeMap<TextureKey, Vec<Texture2D>>, world: &World) {
+    pub async fn render(&mut self, textures: &BTreeMap<TextureKey, Vec<Texture2D>>) {
         let pos = self.collider.pos().await;
 
         match self.animation.animation_type {

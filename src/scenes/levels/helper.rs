@@ -19,7 +19,7 @@ pub async fn render_level(level_scene_data: &mut LevelSceneData, textures: &BTre
 
     // Render collectibles
     for collectible in collectibles {
-        collectible.render(textures, world).await;
+        collectible.render(textures).await;
     }
 }
 

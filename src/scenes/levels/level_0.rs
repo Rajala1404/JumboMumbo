@@ -132,7 +132,7 @@ async fn layout(settings: &Settings) -> LevelSceneData {
         let size = vec2(size.x, size.y);
         collectibles.push(Collectible {
             collected: false,
-            collider: Collider::new_collectible(vec2(size.x * 12.0, screen_height() - size.y * 3.0), size.x, size.y).await,
+            collider: Collider::new_collectible(vec2(size.x * 13.5, screen_height() - size.y * 7.0), size.x, size.y).await,
             texture_key: TextureKey::Coin0,
             animation: Animation::new(AnimationType::Cycle(0, 5)),
             size,
