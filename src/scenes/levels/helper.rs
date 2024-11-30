@@ -24,12 +24,11 @@ pub async fn render_level(level_scene_data: &mut LevelSceneData, textures: &BTre
 }
 
 pub async fn tick_level(level_scene_data: &mut LevelSceneData, settings: &Settings) {
-    let world = level_scene_data.world.as_ref().unwrap();
-
     {   // Tick collectibles
         let mut collectibles_to_remove = Vec::new();
+
         for (i, collectible) in level_scene_data.collectibles.iter_mut().enumerate() {
-            collectible.check(&world).await;
+            collectible.check(level_scene_data.player.as_ref().unwrap()).await;
             if collectible.collected {
                 collectibles_to_remove.push(i);
             }

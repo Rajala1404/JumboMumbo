@@ -4,6 +4,7 @@ use crate::Settings;
 use macroquad::prelude::*;
 use macroquad_platformer::World;
 use stopwatch2::Stopwatch;
+use crate::logic::collider::Collider;
 use crate::logic::player::Player;
 use crate::scenes::levels::structs::{Collectible, Level, LevelSceneData, Platform, PlatformTile, Triggers};
 use crate::utils::debugger::draw_camera_collider;
@@ -131,7 +132,7 @@ async fn layout(settings: &Settings) -> LevelSceneData {
         let size = vec2(size.x, size.y);
         collectibles.push(Collectible {
             collected: false,
-            collider: world.add_actor(vec2(size.x * 12.0, screen_height() - size.y * 3.0), size.x as i32, size.y as i32),
+            collider: Collider::new_collectible(vec2(size.x * 12.0, screen_height() - size.y * 3.0), size.x, size.y).await,
             texture_key: TextureKey::Coin0,
             animation: Animation::new(AnimationType::Cycle(0, 5)),
             size,

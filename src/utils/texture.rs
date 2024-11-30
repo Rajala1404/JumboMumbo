@@ -24,7 +24,7 @@ pub async fn load_textures_from_tile_map(path: String) -> Vec<Texture2D> {
     let mut result = vec![];
 
     for position in map.positions {
-        let img = image.sub_image(position.to_macro_rect());
+        let img = image.sub_image(position.to_macro_rect().await);
         let texture = Texture2D::from_image(&img);
         texture.set_filter(FilterMode::Nearest);
         result.push(texture);

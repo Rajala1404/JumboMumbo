@@ -123,6 +123,9 @@ impl Player {
             move_camera_collider(self.camera_collider[0], world, true, false, &pos, self);
             move_camera_collider(self.camera_collider[1], world, false, true, &pos, self);
         }
+
+        let pos = world.actor_pos(self.collider);
+        self.collider_new.change_pos(pos).await;
     }
 
     pub async fn render(&mut self, world: &World, textures: &BTreeMap<TextureKey, Vec<Texture2D>>) {

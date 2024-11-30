@@ -1,10 +1,11 @@
 //! Contains structs (including there implementation) & enums for levels
 
 use macroquad::math::{vec2, Vec2};
-use macroquad_platformer::{Actor, Solid, World};
+use macroquad_platformer::{Solid, World};
 use std::collections::BTreeMap;
 use macroquad::prelude::{draw_texture_ex, DrawTextureParams, Texture2D};
 use macroquad::color::WHITE;
+use crate::logic::collider::Collider;
 use crate::logic::player::Player;
 use crate::utils::enums::{Animation, AnimationType, TextureKey};
 
@@ -116,7 +117,7 @@ impl PlatformTile {
 #[derive(PartialEq, Clone)]
 pub struct Collectible {
     pub collected: bool,
-    pub collider: Actor,
+    pub collider: Collider,
     pub texture_key: TextureKey,
     pub animation: Animation,
     pub size: Vec2,
@@ -124,20 +125,17 @@ pub struct Collectible {
 }
 
 impl Collectible {
-    // TODO: Implement own collider system
     /// Runs all checks that may get called onto a collectible
-    pub async fn check(&mut self, world: &World) {
-        let pos = world.actor_pos(self.collider);
+    pub async fn check(&mut self, player: &Player) {
         // Check if the collectible collides with another thing
-        let touched = world.collide_check(self.collider, pos);
-        if touched {
+        if self.collider.touched_by_player(player).await {
             println!("Collectible: Ahhh i was touched");
             self.collected = true;
         }
     }
 
     pub async fn render(&mut self, textures: &BTreeMap<TextureKey, Vec<Texture2D>>, world: &World) {
-        let pos = world.actor_pos(self.collider);
+        let pos = self.collider.pos().await;
 
         match self.animation.animation_type {
             AnimationType::Cycle(_, _) => {
