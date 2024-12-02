@@ -5,7 +5,7 @@ use crate::Settings;
 use crate::utils::enums::TextureKey;
 
 pub async fn render_level(level_scene_data: &mut LevelSceneData, textures: &BTreeMap<TextureKey, Vec<Texture2D>>, settings: &Settings) {
-    let world = level_scene_data.world.as_ref().unwrap();
+    let world = &level_scene_data.world;
     let platforms = &level_scene_data.platforms;
     let collectibles = &mut level_scene_data.collectibles;
 

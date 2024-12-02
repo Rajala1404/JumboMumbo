@@ -1,6 +1,9 @@
+use macroquad::color::{BLACK, GREEN, RED, YELLOW};
 use macroquad::math::Vec2;
 use macroquad::prelude::vec2;
+use macroquad::shapes::draw_rectangle_lines;
 use crate::logic::player::Player;
+use crate::Settings;
 use crate::utils::structs::Rect;
 
 #[derive(PartialEq, Copy, Clone)]
@@ -51,5 +54,26 @@ impl Collider {
 
     pub async fn change_pos(&mut self, new_pos: Vec2) {
         (self.rect.x, self.rect.y) = (new_pos.x, new_pos.y);
+    }
+
+    pub async fn debug_render(&self, settings: &Settings) {
+        let color = {
+            match self.collider_type {
+                ColliderType::Actor => {
+                    GREEN
+                }
+                ColliderType::Solid => {
+                    BLACK
+                }
+                ColliderType::Collectible => {
+                    YELLOW
+                }
+                ColliderType::Trigger => {
+                    RED
+                }
+            }
+        };
+
+        draw_rectangle_lines(self.rect.x, self.rect.y, self.rect.w, self.rect.h, 10.0 * settings.gui_scale, color);
     }
 }

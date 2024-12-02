@@ -6,8 +6,8 @@ use macroquad_platformer::World;
 use stopwatch2::Stopwatch;
 use crate::logic::collider::Collider;
 use crate::logic::player::Player;
-use crate::scenes::levels::structs::{Collectible, Level, LevelSceneData, Platform, PlatformTile, Triggers};
-use crate::utils::debugger::draw_camera_collider;
+use crate::scenes::levels::structs::{Collectible, Level, LevelSceneData, Platform, PlatformTile};
+use crate::utils::debugger;
 use crate::utils::enums::{Animation, AnimationType, Scene, SceneTextureKey, TextureKey};
 use crate::utils::texture::{get_texture_path, load_textures_from_tile_map};
 
@@ -25,30 +25,19 @@ pub async fn level_0(scene: &mut Scene, mut textures: &mut BTreeMap<SceneTexture
         *level_scene_data = layout(settings).await;
     }
 
-    let mut world = level_scene_data.world.as_mut().unwrap();
+    let mut world = &mut level_scene_data.world;
     let player = level_scene_data.player.as_mut().unwrap();
 
     player.control(&mut world, settings).await;
 
-    { // CameraCollider
-        if is_key_down(KeyCode::Q) && is_key_down(KeyCode::C) && !level_scene_data.trigger_locks.get(&Triggers::ShowCameraColliders).unwrap_or(&false).to_owned() {
-            let value = level_scene_data.triggers.get(&Triggers::ShowCameraColliders);
-            level_scene_data.triggers.insert(Triggers::ShowCameraColliders, !value.unwrap_or(&false));
-            level_scene_data.trigger_locks.insert(Triggers::ShowCameraColliders, true);
-        }
-
-        if is_key_released(KeyCode::Q) || is_key_released(KeyCode::C) && level_scene_data.trigger_locks.get(&Triggers::ShowCameraColliders).unwrap_or(&false).to_owned() {
-            level_scene_data.trigger_locks.insert(Triggers::ShowCameraColliders, false);
-        }
-
-        if level_scene_data.triggers.get(&Triggers::ShowCameraColliders).unwrap_or(&false).to_owned() {
-            draw_camera_collider(world, player, settings).await;
-        }
-    }
-
     if is_key_down(KeyCode::Escape) {
         *scene = Scene::LevelSelector(0);
+        *level_scene_data = LevelSceneData::empty().await;
+        return;
     }
+
+    debugger::check(&mut level_scene_data.triggers, &mut level_scene_data.trigger_locks).await;
+    debugger::render(level_scene_data, settings).await;
 
     helper::tick_level(level_scene_data, settings).await;
     helper::render_level(level_scene_data, &textures, settings).await;
@@ -145,7 +134,7 @@ async fn layout(settings: &Settings) -> LevelSceneData {
         player: Some(Player::new(width, height, vec2(pos.x, nv2.y), 0, &mut world).await),
         platforms,
         collectibles,
-        world: Some(world),
+        world,
         triggers: BTreeMap::new(),
         trigger_locks: BTreeMap::new()
     }

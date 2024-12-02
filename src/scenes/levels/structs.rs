@@ -1,13 +1,14 @@
 //! Contains structs (including there implementation) & enums for levels
 
 use macroquad::math::{vec2, Vec2};
-use macroquad_platformer::{Solid, World};
+use macroquad_platformer::{Actor, Solid, World};
 use std::collections::BTreeMap;
-use macroquad::prelude::{draw_texture_ex, DrawTextureParams, Texture2D};
+use macroquad::prelude::{draw_texture_ex, get_frame_time, DrawTextureParams, Texture2D};
 use macroquad::color::WHITE;
 use crate::logic::collider::Collider;
 use crate::logic::player::Player;
-use crate::utils::enums::{Animation, AnimationType, TextureKey};
+use crate::Settings;
+use crate::utils::enums::{Animation, AnimationType, Direction, TextureKey};
 
 /// This enum defines all existing levels
 #[derive(PartialEq, Clone)]
@@ -15,9 +16,10 @@ pub enum Level {
     Level0,
 }
 
-#[derive(Eq, PartialEq, Clone, Ord, PartialOrd)]
-pub enum Triggers {
+#[derive(Eq, PartialEq, Clone, Ord, PartialOrd, Debug)]
+pub enum Trigger {
     ShowCameraColliders,
+    ShowColliders,
 }
 
 /// Holds all data a level can possibly have
@@ -26,10 +28,24 @@ pub struct LevelSceneData {
     pub player: Option<Player>,
     pub platforms: Vec<Platform>,
     pub collectibles: Vec<Collectible>,
-    pub world: Option<World>,
+    pub world: World,
     /// Saves temporary triggers / settings
-    pub triggers: BTreeMap<Triggers, bool>,
-    pub trigger_locks: BTreeMap<Triggers, bool>,
+    pub triggers: BTreeMap<Trigger, bool>,
+    pub trigger_locks: BTreeMap<Trigger, bool>,
+}
+
+impl LevelSceneData {
+    pub async fn empty() -> Self {
+        Self {
+            level: None,
+            player: None,
+            platforms: vec![],
+            collectibles: vec![],
+            world: World::new(),
+            triggers: BTreeMap::new(),
+            trigger_locks: BTreeMap::new()
+        }
+    }
 }
 
 #[derive(PartialEq, Clone)]
@@ -152,5 +168,81 @@ impl Collectible {
                 );
             }
         }
+    }
+}
+
+#[derive(PartialEq, Clone)]
+pub struct Enemy {
+    pub texture_size: Vec2,
+    pub texture_key: TextureKey,
+    pub pos: Vec2,
+    pub start_pos: Vec2,
+    pub trigger_right: Collider,
+    pub trigger_left: Collider,
+    pub collider: Collider,
+    pub world_collider: Actor,
+    pub state: EnemyState,
+    pub behavior: Vec<EnemyBehavior>,
+    pub speed: Vec2,
+}
+
+#[derive(PartialEq, Clone)]
+pub enum EnemyState {
+    Idling,
+    Attacking,
+
+}
+
+#[derive(PartialEq, Clone)]
+pub enum EnemyBehavior {
+    Move(Direction)
+}
+
+impl Enemy {
+    pub async fn tick(&mut self, level_scene_data: &mut LevelSceneData, settings: &Settings) {
+        let world = &mut level_scene_data.world;
+        let player = level_scene_data.player.as_ref().unwrap();
+
+        // The same as for the player
+        // SP Start
+        let pos = world.actor_pos(self.world_collider);
+        self.pos = pos;
+        let on_ground = world.collide_check(self.world_collider, pos + vec2(0.0, 1.0));
+        let sealing_hit = world.collide_check(self.world_collider, pos + vec2(0.0, -1.0));
+
+        if sealing_hit {
+            self.speed.y = (100.0 * settings.gui_scale) * get_frame_time()
+        }
+
+        if !on_ground {
+            self.speed.y += (4800.0 * settings.gui_scale) * get_frame_time();
+        } else {
+            self.speed.y = 0.0;
+        }
+        // SP End
+
+        // "AI"
+        match self.state {
+            EnemyState::Attacking => {
+            },
+            EnemyState::Idling => {
+                let touched_right = self.trigger_right.touched_by_player(player);
+                let touched_left = self.trigger_left.touched_by_player(player);
+                if touched_right.await || touched_left.await {
+                    self.state = EnemyState::Attacking;
+                    self.behavior = Vec::new();
+                } else {                                // Check bottom right
+                    if self.pos.x > self.start_pos.x && world.collide_check(self.world_collider, pos + vec2(1.0, 1.0)) {
+                        self.behavior.push(EnemyBehavior::Move(Direction::Right))
+                    } else if self.pos.x < self.start_pos.x && world.collide_check(self.world_collider, pos + vec2(-1.0, 1.0)) {
+                        self.behavior.push(EnemyBehavior::Move(Direction::Left))
+                    }
+                }
+            },
+        }
+
+        // Set positions using the previously defined speeds
+        world.move_h(self.world_collider, self.speed.x * get_frame_time());
+        world.move_v(self.world_collider, self.speed.y * get_frame_time());
     }
 }

@@ -80,3 +80,11 @@ pub enum AnimationType {
     /// The first [u32] represents the start and the last the end
     Cycle(u32, u32)
 }
+
+#[derive(Copy, Clone, PartialEq)]
+pub enum Direction {
+    Right,
+    Left,
+    Up,
+    Down,
+}

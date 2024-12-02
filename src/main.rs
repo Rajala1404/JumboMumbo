@@ -140,7 +140,7 @@ async fn main() {
     // Holds the current scene
     let mut scene = Scene::MainMenu;
     // Holds all data of scenes (score, enemies ...)
-    let mut level_scene_data = LevelSceneData {level: None, player: None, platforms: vec![], collectibles: vec![], world: None, triggers: BTreeMap::new(), trigger_locks: BTreeMap::new() };
+    let mut level_scene_data = LevelSceneData::empty().await;
     // Holds all textures
     let mut textures = BTreeMap::<SceneTextureKey, BTreeMap<TextureKey, Vec<Texture2D>>>::new();
     loop {
