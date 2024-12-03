@@ -6,7 +6,7 @@ use macroquad_platformer::World;
 use stopwatch2::Stopwatch;
 use crate::logic::collider::Collider;
 use crate::logic::player::Player;
-use crate::scenes::levels::structs::{Collectible, Level, LevelSceneData, Platform, PlatformTile};
+use crate::scenes::levels::structs::{Collectible, Enemy, Level, LevelSceneData, Platform, PlatformTile};
 use crate::utils::debugger;
 use crate::utils::enums::{Animation, AnimationType, Scene, SceneTextureKey, TextureKey};
 use crate::utils::texture::{get_texture_path, load_textures_from_tile_map};
@@ -55,6 +55,7 @@ async fn layout(settings: &Settings) -> LevelSceneData {
 
     let mut platforms = vec![];
     let mut collectibles = vec![];
+    let mut enemies = vec![];
 
     { // Base Platform (Collider)
         let pos = vec2(0.0 - screen_width(), screen_height());
@@ -129,11 +130,27 @@ async fn layout(settings: &Settings) -> LevelSceneData {
         });
     }
 
+    { // Enemy above Platform
+        let size = vec2(size.x, size.y);
+        let pos = vec2(size.x * 13.5, screen_height() - size.y * 7.0);
+        let width = size.x * 3.0;
+        let height = size.y * 1.0;
+        enemies.push(Enemy::new(
+            pos,
+            width * 3.0,
+            height,
+            &mut world,
+            vec2(height, height),
+            TextureKey::Player // Player for now
+        ).await);
+    }
+
     LevelSceneData {
         level: Some(Level::Level0),
         player: Some(Player::new(width, height, vec2(pos.x, nv2.y), 0, &mut world).await),
         platforms,
         collectibles,
+        enemies,
         world,
         triggers: BTreeMap::new(),
         trigger_locks: BTreeMap::new()

@@ -81,7 +81,7 @@ pub enum AnimationType {
     Cycle(u32, u32)
 }
 
-#[derive(Copy, Clone, PartialEq)]
+#[derive(Copy, Clone, PartialEq, Ord, Eq, PartialOrd)]
 pub enum Direction {
     Right,
     Left,

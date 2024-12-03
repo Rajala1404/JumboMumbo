@@ -28,6 +28,7 @@ pub struct LevelSceneData {
     pub player: Option<Player>,
     pub platforms: Vec<Platform>,
     pub collectibles: Vec<Collectible>,
+    pub enemies: Vec<Enemy>,
     pub world: World,
     /// Saves temporary triggers / settings
     pub triggers: BTreeMap<Trigger, bool>,
@@ -39,8 +40,9 @@ impl LevelSceneData {
         Self {
             level: None,
             player: None,
-            platforms: vec![],
-            collectibles: vec![],
+            platforms: Vec::new(),
+            collectibles: Vec::new(),
+            enemies: Vec::new(),
             world: World::new(),
             triggers: BTreeMap::new(),
             trigger_locks: BTreeMap::new()
@@ -173,7 +175,7 @@ impl Collectible {
 
 #[derive(PartialEq, Clone)]
 pub struct Enemy {
-    pub texture_size: Vec2,
+    pub size: Vec2,
     pub texture_key: TextureKey,
     pub pos: Vec2,
     pub start_pos: Vec2,
@@ -182,6 +184,7 @@ pub struct Enemy {
     pub collider: Collider,
     pub world_collider: Actor,
     pub state: EnemyState,
+    pub waiters: BTreeMap<EnemyWaiter, bool>,
     pub behavior: Vec<EnemyBehavior>,
     pub speed: Vec2,
 }
@@ -193,15 +196,41 @@ pub enum EnemyState {
 
 }
 
-#[derive(PartialEq, Clone)]
+/// Contains random things that an enemy may do or is needed to execute some bs
+#[derive(PartialEq, Clone, Ord, Eq, PartialOrd)]
+pub enum EnemyWaiter {
+    /// `true` = Right
+    /// `false`= Left
+    IdlingDirection
+}
+
+#[derive(PartialEq, Clone, Ord, Eq, PartialOrd)]
 pub enum EnemyBehavior {
     Move(Direction)
 }
 
 impl Enemy {
-    pub async fn tick(&mut self, level_scene_data: &mut LevelSceneData, settings: &Settings) {
-        let world = &mut level_scene_data.world;
-        let player = level_scene_data.player.as_ref().unwrap();
+    pub async fn new(pos: Vec2, x_range: f32, y_range: f32, world: &mut World, size: Vec2, texture_key: TextureKey) -> Self {
+        let width = size.x;
+        let height = size.y;
+
+        Self {
+            size,
+            texture_key,
+            pos: pos + vec2(1.0, 0.0),
+            start_pos: pos,
+            trigger_right: Collider::new_trigger(pos + size.x, x_range, y_range).await,
+            trigger_left: Collider::new_trigger(pos - width - x_range, x_range, y_range).await,
+            collider: Collider::new_actor(pos, width, height).await,
+            world_collider: world.add_actor(pos, width as i32, height as i32),
+            state: EnemyState::Idling,
+            behavior: Vec::new(),
+            waiters: BTreeMap::new(),
+            speed: vec2(0.0, 0.0),
+        }
+    }
+
+    pub async fn tick(&mut self, world: &mut World, player: &mut Player, settings: &Settings) {
 
         // The same as for the player
         // SP Start
@@ -224,6 +253,7 @@ impl Enemy {
         // "AI"
         match self.state {
             EnemyState::Attacking => {
+                println!("Attacking");
             },
             EnemyState::Idling => {
                 let touched_right = self.trigger_right.touched_by_player(player);
@@ -231,18 +261,61 @@ impl Enemy {
                 if touched_right.await || touched_left.await {
                     self.state = EnemyState::Attacking;
                     self.behavior = Vec::new();
-                } else {                                // Check bottom right
-                    if self.pos.x > self.start_pos.x && world.collide_check(self.world_collider, pos + vec2(1.0, 1.0)) {
-                        self.behavior.push(EnemyBehavior::Move(Direction::Right))
-                    } else if self.pos.x < self.start_pos.x && world.collide_check(self.world_collider, pos + vec2(-1.0, 1.0)) {
-                        self.behavior.push(EnemyBehavior::Move(Direction::Left))
+                } else {
+                    if *self.waiters.get(&EnemyWaiter::IdlingDirection).unwrap_or(&true) {
+                        // Why the fuck does this collide checks so weird
+                        if world.collide_check(self.world_collider, pos + vec2(self.size.x + 1.0, 1.0)) {
+                            self.waiters.insert(EnemyWaiter::IdlingDirection, true);
+                            self.behavior.push(EnemyBehavior::Move(Direction::Right));
+                        } else {
+                            self.waiters.insert(EnemyWaiter::IdlingDirection, false);
+                        }
+                    } else {
+                        // Why the fuck does this collide checks so weird
+                        if world.collide_check(self.world_collider, pos + vec2(-self.size.x - 1.0, 1.0)) {
+                            self.waiters.insert(EnemyWaiter::IdlingDirection, false);
+                            self.behavior.push(EnemyBehavior::Move(Direction::Left));
+                        } else {
+                            self.waiters.insert(EnemyWaiter::IdlingDirection, true);
+                        }
                     }
                 }
             },
         }
+        self.speed.x = 0.0;
+        for behavior in &self.behavior {
+            match behavior {
+                EnemyBehavior::Move(direction) => {
+                    match direction {
+                        Direction::Right => {
+                            self.speed.x = 500.0 * settings.gui_scale;
+                        }
+                        Direction::Left => {
+                            self.speed.x = -500.0 * settings.gui_scale;
+                        }
+                        _ => unimplemented!()
+                    }
+                }
+            }
+        }
+        self.behavior.clear();
 
         // Set positions using the previously defined speeds
         world.move_h(self.world_collider, self.speed.x * get_frame_time());
         world.move_v(self.world_collider, self.speed.y * get_frame_time());
+    }
+
+    pub async fn render(&self, textures: &BTreeMap<TextureKey, Vec<Texture2D>>) {
+        let texture = textures.get(&self.texture_key).unwrap().get(0).unwrap();
+        draw_texture_ex(
+            texture,
+            self.pos.x,
+            self.pos.y,
+            WHITE,
+            DrawTextureParams {
+                dest_size: Some(self.size),
+                ..Default::default()
+            },
+        );
     }
 }
