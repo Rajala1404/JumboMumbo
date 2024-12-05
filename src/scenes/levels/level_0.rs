@@ -33,14 +33,15 @@ pub async fn level_0(scene: &mut Scene, mut textures: &mut BTreeMap<SceneTexture
     if is_key_down(KeyCode::Escape) {
         *scene = Scene::LevelSelector(0);
         *level_scene_data = LevelSceneData::empty().await;
+        set_default_camera();
         return;
     }
 
-    debugger::check(&mut level_scene_data.triggers, &mut level_scene_data.trigger_locks).await;
-    debugger::render(level_scene_data, settings).await;
-
     helper::tick_level(level_scene_data, settings).await;
     helper::render_level(level_scene_data, &textures, settings).await;
+
+    debugger::check(&mut level_scene_data.triggers, &mut level_scene_data.trigger_locks).await;
+    debugger::render(level_scene_data, settings).await;
 }
 
 async fn layout(settings: &Settings) -> LevelSceneData {
@@ -137,7 +138,7 @@ async fn layout(settings: &Settings) -> LevelSceneData {
         let height = size.y * 1.0;
         enemies.push(Enemy::new(
             pos,
-            width * 3.0,
+            width,
             height,
             &mut world,
             vec2(height, height),

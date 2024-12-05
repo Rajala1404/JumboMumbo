@@ -7,7 +7,7 @@ pub enum SceneTextureKey {
 }
 
 /// All textures
-#[derive(Ord, PartialOrd, Eq, PartialEq, Copy, Clone)]
+#[derive(Ord, PartialOrd, Eq, PartialEq, Copy, Clone, Debug)]
 pub enum TextureKey {
     Player,
 
@@ -27,7 +27,7 @@ pub enum Scene {
     Level(structs::Level)
 }
 
-#[derive(Copy, Clone, PartialEq)]
+#[derive(Copy, Clone, PartialEq, Debug)]
 pub struct Animation {
     pub animation_type: AnimationType,
     pub last_time: f64,
@@ -72,7 +72,7 @@ impl Animation {
     }
 }
 
-#[derive(Copy, Clone, PartialEq)]
+#[derive(Copy, Clone, PartialEq, Debug)]
 pub enum AnimationType {
     /// Goes through a fixed number of textures <br>
     /// For this animation the index represents the current texture index. <br>

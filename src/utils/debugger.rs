@@ -37,8 +37,17 @@ pub async fn render(level_scene_data: &LevelSceneData, settings: &Settings) {
             }
         };
 
+        let enemies = async {
+            for enemy in &level_scene_data.enemies {
+                enemy.trigger_left.debug_render(settings).await;
+                enemy.trigger_right.debug_render(settings).await;
+                enemy.collider.debug_render(settings).await;
+            }
+        };
+
         level_scene_data.player.as_ref().unwrap().collider_new.debug_render(settings).await;
         collectibles.await;
+        enemies.await;
     }
 }
 

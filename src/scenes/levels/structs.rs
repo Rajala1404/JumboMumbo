@@ -132,7 +132,7 @@ impl PlatformTile {
     }
 }
 
-#[derive(PartialEq, Clone)]
+#[derive(PartialEq, Clone, Debug)]
 pub struct Collectible {
     pub collected: bool,
     pub collider: Collider,
@@ -146,7 +146,7 @@ impl Collectible {
     /// Runs all checks that may get called onto a collectible
     pub async fn check(&mut self, player: &Player) {
         // Check if the collectible collides with another thing
-        if self.collider.touched_by_player(player).await {
+        if self.collider.touching_player(player).await {
             self.collected = true;
         }
     }
@@ -221,7 +221,7 @@ impl Enemy {
             start_pos: pos,
             trigger_right: Collider::new_trigger(pos + size.x, x_range, y_range).await,
             trigger_left: Collider::new_trigger(pos - width - x_range, x_range, y_range).await,
-            collider: Collider::new_actor(pos, width, height).await,
+            collider: Collider::new_enemy(pos, width, height).await,
             world_collider: world.add_actor(pos, width as i32, height as i32),
             state: EnemyState::Idling,
             behavior: Vec::new(),
@@ -253,14 +253,14 @@ impl Enemy {
         // "AI"
         match self.state {
             EnemyState::Attacking => {
-                println!("Attacking");
+
             },
             EnemyState::Idling => {
-                let touched_right = self.trigger_right.touched_by_player(player);
-                let touched_left = self.trigger_left.touched_by_player(player);
+                let touched_right = self.trigger_right.touching_player(player);
+                let touched_left = self.trigger_left.touching_player(player);
                 if touched_right.await || touched_left.await {
                     self.state = EnemyState::Attacking;
-                    self.behavior = Vec::new();
+                    self.behavior.clear();
                 } else {
                     if *self.waiters.get(&EnemyWaiter::IdlingDirection).unwrap_or(&true) {
                         // Why the fuck does this collide checks so weird
@@ -303,6 +303,16 @@ impl Enemy {
         // Set positions using the previously defined speeds
         world.move_h(self.world_collider, self.speed.x * get_frame_time());
         world.move_v(self.world_collider, self.speed.y * get_frame_time());
+
+        let pos = world.actor_pos(self.world_collider);
+        self.pos = pos;
+        self.update_pos().await;
+    }
+
+    async fn update_pos(&mut self) {
+        self.trigger_left.change_pos(self.pos - vec2(self.trigger_left.rect.w, 0.0)).await;
+        self.trigger_right.change_pos(self.pos + vec2(self.size.x, 0.0)).await;
+        self.collider.change_pos(self.pos).await;
     }
 
     pub async fn render(&self, textures: &BTreeMap<TextureKey, Vec<Texture2D>>) {

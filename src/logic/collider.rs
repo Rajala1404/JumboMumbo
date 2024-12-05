@@ -1,20 +1,22 @@
-use macroquad::color::{BLACK, GREEN, RED, YELLOW};
+use macroquad::color::{BLACK, GREEN, ORANGE, RED, YELLOW};
 use macroquad::math::Vec2;
 use macroquad::prelude::vec2;
 use macroquad::shapes::draw_rectangle_lines;
 use crate::logic::player::Player;
+use crate::scenes::levels::structs::Enemy;
 use crate::Settings;
 use crate::utils::structs::Rect;
 
-#[derive(PartialEq, Copy, Clone)]
+#[derive(PartialEq, Copy, Clone, Debug)]
 pub struct Collider {
     pub rect: Rect,
     pub collider_type: ColliderType
 }
 
-#[derive(PartialEq, Copy, Clone)]
+#[derive(PartialEq, Copy, Clone, Debug)]
 pub enum ColliderType {
     Actor,
+    Enemy,
     Solid,
     Collectible,
     Trigger,
@@ -24,6 +26,10 @@ impl Collider {
     pub async fn new_actor(pos: Vec2, width: f32, height: f32) -> Self {
         let rect = Rect::new(pos.x, pos.y, width, height).await;
         Self { rect, collider_type: ColliderType::Actor}
+    }
+    pub async fn new_enemy(pos: Vec2, width: f32, height: f32) -> Self {
+        let rect = Rect::new(pos.x, pos.y, width, height).await;
+        Self { rect, collider_type: ColliderType::Enemy}
     }
 
     pub async fn new_solid(pos: Vec2, width: f32, height: f32) -> Self {
@@ -43,9 +49,13 @@ impl Collider {
 
     /// Checks if the collider gets touched by the player
     /// This means if the Players [Collider] is inside the collider of [Self]
-    pub async fn touched_by_player(&self, player: &Player) -> bool {
+    pub async fn touching_player(&self, player: &Player) -> bool {
         let player_rect = player.collider_new.rect;
         self.rect.overlaps_with(&player_rect).await
+    }
+
+    pub async fn touching_enemy(&self, enemies: &Vec<Enemy>) -> Enemy {
+        unimplemented!()
     }
 
     pub async fn pos(&self) -> Vec2 {
@@ -61,7 +71,10 @@ impl Collider {
             match self.collider_type {
                 ColliderType::Actor => {
                     GREEN
-                }
+                },
+                ColliderType::Enemy => {
+                    RED
+                },
                 ColliderType::Solid => {
                     BLACK
                 }
@@ -69,7 +82,7 @@ impl Collider {
                     YELLOW
                 }
                 ColliderType::Trigger => {
-                    RED
+                    ORANGE
                 }
             }
         };
