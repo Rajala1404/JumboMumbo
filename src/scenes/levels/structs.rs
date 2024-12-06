@@ -263,7 +263,7 @@ impl Enemy {
                     self.behavior.clear();
                 } else {
                     if *self.waiters.get(&EnemyWaiter::IdlingDirection).unwrap_or(&true) {
-                        // Why the fuck does this collide checks so weird
+                        // Why the fuck does this function checks so wierd
                         if world.collide_check(self.world_collider, pos + vec2(self.size.x + 1.0, 1.0)) {
                             self.waiters.insert(EnemyWaiter::IdlingDirection, true);
                             self.behavior.push(EnemyBehavior::Move(Direction::Right));
@@ -271,7 +271,7 @@ impl Enemy {
                             self.waiters.insert(EnemyWaiter::IdlingDirection, false);
                         }
                     } else {
-                        // Why the fuck does this collide checks so weird
+                        // Same here
                         if world.collide_check(self.world_collider, pos + vec2(-self.size.x - 1.0, 1.0)) {
                             self.waiters.insert(EnemyWaiter::IdlingDirection, false);
                             self.behavior.push(EnemyBehavior::Move(Direction::Left));
