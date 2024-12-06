@@ -7,6 +7,7 @@ use macroquad::prelude::{draw_texture_ex, get_frame_time, screen_height, Camera2
 use macroquad::window::screen_width;
 use macroquad_platformer::{Actor, World};
 use crate::logic::collider::Collider;
+use crate::scenes::levels::structs::Enemy;
 use crate::Settings;
 use crate::utils::enums::TextureKey;
 
@@ -44,7 +45,7 @@ impl Player {
     }
 
     /// This function handles everything regarding the controls of the player (including moving)
-    pub async fn control(&mut self, world: &mut World, settings: &Settings) {
+    pub async fn control(&mut self, world: &mut World, enemies: &Vec<Enemy>, settings: &Settings) {
         // gets the current position of the player from the world
         let pos = world.actor_pos(self.collider);
         // Checks if the player is on another collider by checking if one collider is 1px beyond him
@@ -88,9 +89,7 @@ impl Player {
             }
         }
 
-        // Set positions using the previously defined speeds
-        world.move_h(self.collider, self.speed.x * get_frame_time());
-        world.move_v(self.collider, self.speed.y * get_frame_time());
+        self.perform_move(enemies, world).await;
 
         let pos = world.actor_pos(self.collider);
 
@@ -123,6 +122,13 @@ impl Player {
             move_camera_collider(self.camera_collider[0], world, true, false, &pos, self);
             move_camera_collider(self.camera_collider[1], world, false, true, &pos, self);
         }
+    }
+
+    /// Moves the player and checks for all necessary things (like collision)
+    pub async fn perform_move(&mut self, enemies: &Vec<Enemy>, world: &mut World) {
+        // Set positions using the previously defined speeds
+        world.move_h(self.collider, self.speed.x * get_frame_time());
+        world.move_v(self.collider, self.speed.y * get_frame_time());
 
         let pos = world.actor_pos(self.collider);
         self.collider_new.change_pos(pos).await;

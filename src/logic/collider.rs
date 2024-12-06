@@ -51,11 +51,30 @@ impl Collider {
     /// This means if the Players [Collider] is inside the collider of [Self]
     pub async fn touching_player(&self, player: &Player) -> bool {
         let player_rect = player.collider_new.rect;
-        self.rect.overlaps_with(&player_rect).await
+        self.rect.overlaps(&player_rect).await
     }
 
-    pub async fn touching_enemy(&self, enemies: &Vec<Enemy>) -> Enemy {
-        unimplemented!()
+    /// This functions checks if an enemy of the provided Vector collides with the Player on the relative position arguments <br>
+    /// The position is relative to the top left corner of the collider <br>
+    /// The returned [Vec<usize>] contains the index of each enemy that collides
+    pub async fn collide_check_enemy(&self, enemies: &Vec<Enemy>, pos: Vec2) -> Vec<usize> {
+        let mut result = Vec::new();
+        let rect = {
+            let mut result = self.rect;
+            // Shift positions of Rectangle
+            result.x += pos.x;
+            result.y += pos.y;
+
+            result
+        };
+
+        for (i, enemy) in enemies.iter().enumerate() {
+            if rect.overlaps(&enemy.collider.rect).await {
+                result.push(i)
+            }
+        }
+
+        result
     }
 
     pub async fn pos(&self) -> Vec2 {

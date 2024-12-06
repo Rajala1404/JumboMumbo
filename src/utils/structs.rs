@@ -1,5 +1,4 @@
 use serde::{Deserialize, Serialize};
-use crate::utils::mathemann::rect_overlap_rect;
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Serialize, Deserialize)]
 pub struct Rect {
@@ -24,7 +23,31 @@ impl Rect {
         )
     }
 
-    pub async fn overlaps_with(&self, other: &Rect) -> bool {
-        rect_overlap_rect(self, other).await
+    /// Checks whether the `Rect` overlaps another `Rect`
+    pub async fn overlaps(&self, other: &Rect) -> bool {
+        self.left().await <= other.right().await
+            && self.right().await >= other.left().await
+            && self.top().await <= other.bottom().await
+            && self.bottom().await >= other.top().await
+    }
+
+    /// Returns the left edge
+    pub async fn left(&self) -> f32 {
+        self.x
+    }
+
+    /// Returns the right edge
+    pub async fn right(&self) -> f32 {
+        self.x + self.w
+    }
+
+    /// Returns the top edge
+    pub async fn top(&self) -> f32 {
+        self.y
+    }
+
+    /// Returns the bottom edge
+    pub async fn bottom(&self) -> f32 {
+        self.y + self.h
     }
 }

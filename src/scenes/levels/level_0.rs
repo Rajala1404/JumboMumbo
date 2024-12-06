@@ -27,8 +27,9 @@ pub async fn level_0(scene: &mut Scene, mut textures: &mut BTreeMap<SceneTexture
 
     let mut world = &mut level_scene_data.world;
     let player = level_scene_data.player.as_mut().unwrap();
+    let enemies = &level_scene_data.enemies;
 
-    player.control(&mut world, settings).await;
+    player.control(&mut world, enemies, settings).await;
 
     if is_key_down(KeyCode::Escape) {
         *scene = Scene::LevelSelector(0);
@@ -131,11 +132,11 @@ async fn layout(settings: &Settings) -> LevelSceneData {
         });
     }
 
-    { // Enemy above Platform
+    { // Enemy on Platform
         let size = vec2(size.x, size.y);
         let pos = vec2(size.x * 13.5, screen_height() - size.y * 7.0);
-        let width = size.x * 3.0;
-        let height = size.y * 1.0;
+        let width = size.x * 1.5;
+        let height = size.y;
         enemies.push(Enemy::new(
             pos,
             width,
