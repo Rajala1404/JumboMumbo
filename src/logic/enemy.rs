@@ -35,7 +35,8 @@ pub enum EnemyState {
 pub enum EnemyWaiter {
     /// `true` = Right
     /// `false`= Left
-    IdlingDirection
+    IdlingDirection,
+    Jumping
 }
 
 #[derive(PartialEq, Clone, Ord, Eq, PartialOrd, Debug)]
@@ -55,7 +56,7 @@ impl Enemy {
             result.insert(0, 0, Collider::new_enemy(pos, width, height, vec2(0.0, 0.0)).await);
 
             // Insert collider that go around
-            for row in -2..3 {
+            for row in -3..4 {
                 for col in -2..3 {
                     if result.get(row, col).is_none() {
                         result.insert(row, col, Collider::new_trigger(vec2(size.x * row as f32, size.y * col as f32), size.x, size.y, vec2(size.x * row as f32, size.y * col as f32)).await)
@@ -90,35 +91,70 @@ impl Enemy {
         let sealing_hit = world.collide_check(self.world_collider, pos + vec2(0.0, -1.0));
 
         if sealing_hit {
-            self.speed.y = (100.0 * settings.gui_scale) * get_frame_time()
+            self.speed.y = 50.0 * settings.gui_scale
         }
 
         if !on_ground {
-            self.speed.y += (4800.0 * settings.gui_scale) * get_frame_time();
+            self.speed.y += 32.0 * settings.gui_scale;
         } else {
+            self.waiters.remove(&EnemyWaiter::Jumping);
             self.speed.y = 0.0;
         }
         // SP End
 
         // DI (Dumb intelligence)
         match self.state {
+            // TODO: Fix speed difference if solid is above Enemy
             EnemyState::Attacking => {
-                //let touched_right = self.trigger_right.touching_player(player);
-                //let touched_left = self.trigger_left.touching_player(player);
-//
-                //if touched_right.await {
-                //    self.behavior.push(EnemyBehavior::Move(Direction::Right));
-                //    self.waiters.insert(EnemyWaiter::IdlingDirection, true);
-                //} else if touched_left.await {
-                //    self.behavior.push(EnemyBehavior::Move(Direction::Left));
-                //    self.waiters.insert(EnemyWaiter::IdlingDirection, false);
-                //} else {
-                //    self.state = EnemyState::Idling
-                //}
-//
-                //if world.collide_check(self.world_collider, pos + vec2(0.0, -self.size.y * 2.0)) {
-                //    self.state = EnemyState::Idling
-                //}
+                let touched_right = {
+                    let mut result = false;
+                    for ((row, col), collider) in &self.colliders {
+                        if row <= &0 { continue; }
+                        if collider.touching_player(player).await {
+                            if !self.tile_visible(world, row, col).await {
+                                continue;
+                            }
+                            result = true;
+                            break;
+                        }
+                    }
+                    result
+                };
+
+                let touched_left = {
+                    let mut result = false;
+                    for ((row, col), collider) in &self.colliders {
+                        if row >= &0 { continue; }
+                        if collider.touching_player(player).await {
+                            if !self.tile_visible(world, row, col).await {
+                                continue;
+                            }
+                            result = true;
+                            break;
+                        }
+                    }
+                    result
+                };
+
+                // Jump if colliding with a wall
+                if self.is_touching_wall(world).await {
+                    self.behavior.push(EnemyBehavior::Move(Direction::Up));
+                    self.waiters.insert(EnemyWaiter::Jumping, true);
+                }
+
+                if touched_right {
+                    self.behavior.push(EnemyBehavior::Move(Direction::Right));
+                    self.waiters.insert(EnemyWaiter::IdlingDirection, true);
+                } else if touched_left {
+                    self.behavior.push(EnemyBehavior::Move(Direction::Left));
+                    self.waiters.insert(EnemyWaiter::IdlingDirection, false);
+                } else {
+                    self.state = EnemyState::Idling
+                }
+
+                if world.collide_check(self.world_collider, pos + vec2(0.0, -self.size.y * 2.0)) {
+                    self.state = EnemyState::Idling
+                }
             },
             EnemyState::Idling => {
                 let touched = {
@@ -139,9 +175,15 @@ impl Enemy {
                     self.state = EnemyState::Attacking;
                     self.behavior.clear();
                 } else {
+                    // Jump if colliding with a wall
+                    if self.is_touching_wall(world).await {
+                        self.behavior.push(EnemyBehavior::Move(Direction::Up));
+                        self.waiters.insert(EnemyWaiter::Jumping, true);
+                    }
+
                     if *self.waiters.get(&EnemyWaiter::IdlingDirection).unwrap_or(&true) {
                         // Why the fuck does this function check so wierd
-                        if world.collide_check(self.world_collider, pos + vec2(self.size.x + 1.0, 1.0)) {
+                        if world.collide_check(self.world_collider, pos + vec2(self.size.x + 1.0, 1.0)) || *self.waiters.get(&EnemyWaiter::Jumping).unwrap_or(&false) {
                             self.waiters.insert(EnemyWaiter::IdlingDirection, true);
                             self.behavior.push(EnemyBehavior::Move(Direction::Right));
                         } else {
@@ -149,7 +191,7 @@ impl Enemy {
                         }
                     } else {
                         // Same here
-                        if world.collide_check(self.world_collider, pos + vec2(-self.size.x - 1.0, 1.0)) {
+                        if world.collide_check(self.world_collider, pos + vec2(-self.size.x - 1.0, 1.0)) || *self.waiters.get(&EnemyWaiter::Jumping).unwrap_or(&false) {
                             self.waiters.insert(EnemyWaiter::IdlingDirection, false);
                             self.behavior.push(EnemyBehavior::Move(Direction::Left));
                         } else {
@@ -169,6 +211,9 @@ impl Enemy {
                         }
                         Direction::Left => {
                             self.speed.x = -600.0 * settings.gui_scale;
+                        }
+                        Direction::Up => {
+                            self.speed.y = 1900.0 * -settings.gui_scale;
                         }
                         _ => unimplemented!()
                     }
@@ -215,6 +260,10 @@ impl Enemy {
         for (_, collider) in &mut self.colliders {
             collider.change_pos(self.pos + collider.offset).await
         }
+    }
+
+    async fn is_touching_wall(&self, world: &World) -> bool {
+        world.collide_check(self.world_collider, self.pos + vec2(-1.0, 0.0)) || world.collide_check(self.world_collider, self.pos + vec2(1.0, 0.0))
     }
 
     pub async fn render(&self, textures: &BTreeMap<TextureKey, Vec<Texture2D>>) {

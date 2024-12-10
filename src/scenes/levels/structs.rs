@@ -19,6 +19,7 @@ pub enum Level {
 pub enum Trigger {
     ShowCameraColliders,
     ShowColliders,
+    ShowFPS,
 }
 
 /// Holds all data a level can possibly have
