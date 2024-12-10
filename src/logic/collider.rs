@@ -10,6 +10,7 @@ use crate::utils::structs::Rect;
 #[derive(PartialEq, Copy, Clone, Debug)]
 pub struct Collider {
     pub rect: Rect,
+    pub offset: Vec2,
     pub collider_type: ColliderType
 }
 
@@ -23,28 +24,28 @@ pub enum ColliderType {
 }
 
 impl Collider {
-    pub async fn new_actor(pos: Vec2, width: f32, height: f32) -> Self {
+    pub async fn new_actor(pos: Vec2, width: f32, height: f32, offset: Vec2) -> Self {
         let rect = Rect::new(pos.x, pos.y, width, height).await;
-        Self { rect, collider_type: ColliderType::Actor}
+        Self { rect, offset, collider_type: ColliderType::Actor}
     }
-    pub async fn new_enemy(pos: Vec2, width: f32, height: f32) -> Self {
+    pub async fn new_enemy(pos: Vec2, width: f32, height: f32, offset: Vec2) -> Self {
         let rect = Rect::new(pos.x, pos.y, width, height).await;
-        Self { rect, collider_type: ColliderType::Enemy}
-    }
-
-    pub async fn new_solid(pos: Vec2, width: f32, height: f32) -> Self {
-        let rect = Rect::new(pos.x, pos.y, width, height).await;
-        Self { rect, collider_type: ColliderType::Solid}
+        Self { rect, offset, collider_type: ColliderType::Enemy}
     }
 
-    pub async fn new_collectible(pos: Vec2, width: f32, height: f32) -> Self {
+    pub async fn new_solid(pos: Vec2, width: f32, height: f32, offset: Vec2) -> Self {
         let rect = Rect::new(pos.x, pos.y, width, height).await;
-        Self { rect, collider_type: ColliderType::Collectible}
+        Self { rect, offset, collider_type: ColliderType::Solid}
     }
 
-    pub async fn new_trigger(pos: Vec2, width: f32, height: f32) -> Self {
+    pub async fn new_collectible(pos: Vec2, width: f32, height: f32, offset: Vec2) -> Self {
         let rect = Rect::new(pos.x, pos.y, width, height).await;
-        Self { rect, collider_type: ColliderType::Trigger}
+        Self { rect, offset, collider_type: ColliderType::Collectible}
+    }
+
+    pub async fn new_trigger(pos: Vec2, width: f32, height: f32, offset: Vec2) -> Self {
+        let rect = Rect::new(pos.x, pos.y, width, height).await;
+        Self { rect, offset, collider_type: ColliderType::Trigger}
     }
 
     /// Checks if the collider gets touched by the player

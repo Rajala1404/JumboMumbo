@@ -124,7 +124,7 @@ async fn layout(settings: &Settings) -> LevelSceneData {
         let size = vec2(size.x, size.y);
         collectibles.push(Collectible {
             collected: false,
-            collider: Collider::new_collectible(vec2(size.x * 13.5, screen_height() - size.y * 7.0), size.x, size.y).await,
+            collider: Collider::new_collectible(vec2(size.x * 13.5, screen_height() - size.y * 7.0), size.x, size.y, nv2).await,
             texture_key: TextureKey::Coin0,
             animation: Animation::new(AnimationType::Cycle(0, 5)),
             size,
@@ -135,12 +135,13 @@ async fn layout(settings: &Settings) -> LevelSceneData {
     { // Enemy on Platform
         let size = vec2(size.x, size.y);
         let pos = vec2(size.x * 13.5, screen_height() - size.y * 7.0);
-        let width = size.x * 1.5;
+        let width = size.x * 2.0;
         let height = size.y;
         enemies.push(Enemy::new(
             pos,
             width,
-            height,
+            height * 3.0,
+            vec2(0.0, -size.y * 2.0),
             &mut world,
             vec2(height, height),
             TextureKey::Player // Player for now

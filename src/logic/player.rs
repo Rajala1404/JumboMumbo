@@ -35,7 +35,7 @@ impl Player {
             height,
             state,
             collider: world.add_actor(pos, width as i32, height as i32),
-            collider_new: Collider::new_actor(pos, width, height).await,
+            collider_new: Collider::new_actor(pos, width, height, vec2(0.0, 0.0)).await,
             camera_collider: [
                 world.add_actor(vec2(0.0, 0.0), (screen_width() / 4.0) as i32, screen_height() as i32),
                 world.add_actor(vec2(screen_width() - (screen_width() / 4.0), 0.0), (screen_width() / 4.0) as i32, screen_height() as i32),

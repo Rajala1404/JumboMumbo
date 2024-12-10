@@ -173,7 +173,7 @@ impl Collectible {
     }
 }
 
-#[derive(PartialEq, Clone)]
+#[derive(PartialEq, Clone, Debug)]
 pub struct Enemy {
     pub size: Vec2,
     pub texture_key: TextureKey,
@@ -189,7 +189,7 @@ pub struct Enemy {
     pub speed: Vec2,
 }
 
-#[derive(PartialEq, Clone)]
+#[derive(PartialEq, Clone, Debug)]
 pub enum EnemyState {
     Idling,
     Attacking,
@@ -197,20 +197,20 @@ pub enum EnemyState {
 }
 
 /// Contains random things that an enemy may do or is needed to execute some bs
-#[derive(PartialEq, Clone, Ord, Eq, PartialOrd)]
+#[derive(PartialEq, Clone, Ord, Eq, PartialOrd, Debug)]
 pub enum EnemyWaiter {
     /// `true` = Right
     /// `false`= Left
     IdlingDirection
 }
 
-#[derive(PartialEq, Clone, Ord, Eq, PartialOrd)]
+#[derive(PartialEq, Clone, Ord, Eq, PartialOrd, Debug)]
 pub enum EnemyBehavior {
     Move(Direction)
 }
 
 impl Enemy {
-    pub async fn new(pos: Vec2, x_range: f32, y_range: f32, world: &mut World, size: Vec2, texture_key: TextureKey) -> Self {
+    pub async fn new(pos: Vec2, x_range: f32, y_range: f32, offset: Vec2, world: &mut World, size: Vec2, texture_key: TextureKey) -> Self {
         let width = size.x;
         let height = size.y;
 
@@ -219,9 +219,9 @@ impl Enemy {
             texture_key,
             pos: pos + vec2(1.0, 0.0),
             start_pos: pos,
-            trigger_right: Collider::new_trigger(pos + size.x, x_range, y_range).await,
-            trigger_left: Collider::new_trigger(pos - width - x_range, x_range, y_range).await,
-            collider: Collider::new_enemy(pos, width, height).await,
+            trigger_right: Collider::new_trigger(pos + size.x, x_range, y_range, offset).await,
+            trigger_left: Collider::new_trigger(pos - width - x_range, x_range, y_range, offset).await,
+            collider: Collider::new_enemy(pos, width, height, vec2(0.0, 0.0)).await,
             world_collider: world.add_actor(pos, width as i32, height as i32),
             state: EnemyState::Idling,
             behavior: Vec::new(),
@@ -310,8 +310,8 @@ impl Enemy {
     }
 
     async fn update_pos(&mut self) {
-        self.trigger_left.change_pos(self.pos - vec2(self.trigger_left.rect.w, 0.0)).await;
-        self.trigger_right.change_pos(self.pos + vec2(self.size.x, 0.0)).await;
+        self.trigger_left.change_pos(self.pos - vec2(self.trigger_left.rect.w, -self.trigger_left.offset.y)).await;
+        self.trigger_right.change_pos(self.pos + vec2(self.size.x, self.trigger_right.offset.y)).await;
         self.collider.change_pos(self.pos).await;
     }
 
