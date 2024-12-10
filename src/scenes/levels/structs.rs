@@ -9,6 +9,7 @@ use crate::logic::collider::Collider;
 use crate::logic::player::Player;
 use crate::Settings;
 use crate::utils::enums::{Animation, AnimationType, Direction, TextureKey};
+use crate::utils::structs::Matrix;
 
 /// This enum defines all existing levels
 #[derive(PartialEq, Clone)]
@@ -179,9 +180,7 @@ pub struct Enemy {
     pub texture_key: TextureKey,
     pub pos: Vec2,
     pub start_pos: Vec2,
-    pub trigger_right: Collider,
-    pub trigger_left: Collider,
-    pub collider: Collider,
+    pub colliders: Matrix<Collider>,
     pub world_collider: Actor,
     pub state: EnemyState,
     pub waiters: BTreeMap<EnemyWaiter, bool>,
@@ -210,18 +209,34 @@ pub enum EnemyBehavior {
 }
 
 impl Enemy {
-    pub async fn new(pos: Vec2, x_range: f32, y_range: f32, offset: Vec2, world: &mut World, size: Vec2, texture_key: TextureKey) -> Self {
+    pub async fn new(pos: Vec2, world: &mut World, size: Vec2, texture_key: TextureKey) -> Self {
         let width = size.x;
         let height = size.y;
+
+        let colliders = {
+            let mut result = Matrix::new();
+
+            // Insert Enemy collider
+            result.insert(0, 0, Collider::new_enemy(pos, width, height, vec2(0.0, 0.0)).await);
+
+            // Insert collider that go around
+            for row in -2..3 {
+                for col in -2..3 {
+                    if result.get(row, col).is_none() {
+                        result.insert(row, col, Collider::new_trigger(vec2(size.x * row as f32, size.y * col as f32), size.x, size.y, vec2(size.x * row as f32, size.y * col as f32)).await)
+                    }
+                }
+            }
+
+            result
+        };
 
         Self {
             size,
             texture_key,
             pos: pos + vec2(1.0, 0.0),
             start_pos: pos,
-            trigger_right: Collider::new_trigger(pos + size.x, x_range, y_range, offset).await,
-            trigger_left: Collider::new_trigger(pos - width - x_range, x_range, y_range, offset).await,
-            collider: Collider::new_enemy(pos, width, height, vec2(0.0, 0.0)).await,
+            colliders,
             world_collider: world.add_actor(pos, width as i32, height as i32),
             state: EnemyState::Idling,
             behavior: Vec::new(),
@@ -250,15 +265,39 @@ impl Enemy {
         }
         // SP End
 
-        // "AI"
+        // DI (Dumb intelligence)
         match self.state {
             EnemyState::Attacking => {
-
+                //let touched_right = self.trigger_right.touching_player(player);
+                //let touched_left = self.trigger_left.touching_player(player);
+//
+                //if touched_right.await {
+                //    self.behavior.push(EnemyBehavior::Move(Direction::Right));
+                //    self.waiters.insert(EnemyWaiter::IdlingDirection, true);
+                //} else if touched_left.await {
+                //    self.behavior.push(EnemyBehavior::Move(Direction::Left));
+                //    self.waiters.insert(EnemyWaiter::IdlingDirection, false);
+                //} else {
+                //    self.state = EnemyState::Idling
+                //}
+//
+                //if world.collide_check(self.world_collider, pos + vec2(0.0, -self.size.y * 2.0)) {
+                //    self.state = EnemyState::Idling
+                //}
             },
             EnemyState::Idling => {
-                let touched_right = self.trigger_right.touching_player(player);
-                let touched_left = self.trigger_left.touching_player(player);
-                if touched_right.await || touched_left.await {
+                let touched = {
+                    let mut result = false;
+                    for (_, collider) in &self.colliders {
+                        if collider.touching_player(player).await {
+                            result = true;
+                            break;
+                        }
+                    }
+                    result
+                };
+
+                if touched {
                     self.state = EnemyState::Attacking;
                     self.behavior.clear();
                 } else {
@@ -288,10 +327,10 @@ impl Enemy {
                 EnemyBehavior::Move(direction) => {
                     match direction {
                         Direction::Right => {
-                            self.speed.x = 500.0 * settings.gui_scale;
+                            self.speed.x = 600.0 * settings.gui_scale;
                         }
                         Direction::Left => {
-                            self.speed.x = -500.0 * settings.gui_scale;
+                            self.speed.x = -600.0 * settings.gui_scale;
                         }
                         _ => unimplemented!()
                     }
@@ -310,9 +349,12 @@ impl Enemy {
     }
 
     async fn update_pos(&mut self) {
-        self.trigger_left.change_pos(self.pos - vec2(self.trigger_left.rect.w, -self.trigger_left.offset.y)).await;
-        self.trigger_right.change_pos(self.pos + vec2(self.size.x, self.trigger_right.offset.y)).await;
-        self.collider.change_pos(self.pos).await;
+        //self.trigger_left.change_pos(self.pos - vec2(self.trigger_left.rect.w, -self.trigger_left.offset.y)).await;
+        //self.trigger_right.change_pos(self.pos + vec2(self.size.x, self.trigger_right.offset.y)).await;
+        //self.collider.change_pos(self.pos).await;
+        for (_, collider) in &mut self.colliders {
+            collider.change_pos(self.pos + collider.offset).await
+        }
     }
 
     pub async fn render(&self, textures: &BTreeMap<TextureKey, Vec<Texture2D>>) {

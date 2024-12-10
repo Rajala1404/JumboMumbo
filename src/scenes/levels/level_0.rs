@@ -139,9 +139,6 @@ async fn layout(settings: &Settings) -> LevelSceneData {
         let height = size.y;
         enemies.push(Enemy::new(
             pos,
-            width,
-            height * 3.0,
-            vec2(0.0, -size.y * 2.0),
             &mut world,
             vec2(height, height),
             TextureKey::Player // Player for now

@@ -70,7 +70,7 @@ impl Collider {
         };
 
         for (i, enemy) in enemies.iter().enumerate() {
-            if rect.overlaps(&enemy.collider.rect).await {
+            if rect.overlaps(&enemy.colliders.get(0, 0).unwrap().rect).await {
                 result.push(i)
             }
         }

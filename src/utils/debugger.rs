@@ -5,6 +5,7 @@ use macroquad::prelude::{screen_height, screen_width};
 use macroquad::shapes::draw_rectangle_lines;
 use macroquad::text::draw_text;
 use macroquad_platformer::World;
+use crate::logic::collider::Collider;
 use crate::logic::player::Player;
 use crate::scenes::levels::structs::{LevelSceneData, Trigger};
 use crate::utils::structs::Settings;
@@ -39,9 +40,10 @@ pub async fn render(level_scene_data: &LevelSceneData, settings: &Settings) {
 
         let enemies = async {
             for enemy in &level_scene_data.enemies {
-                enemy.trigger_left.debug_render(settings).await;
-                enemy.trigger_right.debug_render(settings).await;
-                enemy.collider.debug_render(settings).await;
+                let iter_colliders: Vec<Collider> = enemy.colliders.clone().into();
+                for collider in iter_colliders {
+                    collider.debug_render(settings).await;
+                }
             }
         };
 

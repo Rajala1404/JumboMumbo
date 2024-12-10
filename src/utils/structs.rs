@@ -140,3 +140,37 @@ impl<T> Matrix<T> {
         ]
     }
 }
+
+impl<T> Into<Vec<T>> for Matrix<T> where T: Clone {
+    fn into(self) -> Vec<T> {
+        self.data.iter().map(| (_, t)| (*t).clone()).collect()
+    }
+}
+
+impl<T> IntoIterator for Matrix<T> {
+    type Item = ((i32, i32), T);
+    type IntoIter = std::collections::btree_map::IntoIter<(i32, i32), T>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.data.into_iter()
+    }
+}
+
+impl<'a, T> IntoIterator for &'a Matrix<T> {
+    type Item = (&'a (i32, i32), &'a T);
+    type IntoIter = std::collections::btree_map::Iter<'a,(i32, i32), T>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.data.iter()
+    }
+}
+
+impl<'a, T> IntoIterator for &'a mut Matrix<T> {
+    type Item = (&'a (i32, i32), &'a mut T);
+    type IntoIter = std::collections::btree_map::IterMut<'a,(i32, i32), T>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.data.iter_mut()
+    }
+}
+
