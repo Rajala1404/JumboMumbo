@@ -1,4 +1,6 @@
+use std::collections::BTreeMap;
 use serde::{Deserialize, Serialize};
+use macroquad::math::f32;
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Serialize, Deserialize)]
 pub struct Rect {
@@ -49,5 +51,92 @@ impl Rect {
     /// Returns the bottom edge
     pub async fn bottom(&self) -> f32 {
         self.y + self.h
+    }
+}
+
+/// Basically the same as a `Vec2` just with `i32` instead of `f32`
+#[derive(PartialEq, Clone, Debug)]
+pub struct Vec2i {
+    pub x: i32,
+    pub y: i32,
+}
+
+impl Vec2i {
+    pub fn new(x: i32, y: i32) -> Self {
+        Self { x, y }
+    }
+}
+
+pub fn vec2i(x: i32, y: i32) -> Vec2i {
+    Vec2i { x, y }
+}
+
+impl From<macroquad::math::Vec2> for Vec2i {
+    fn from(vec: macroquad::math::Vec2) -> Self {
+        Vec2i {
+            x: vec.x.round() as i32,
+            y: vec.y.round() as i32,
+        }
+    }
+}
+
+
+#[derive(PartialEq, Clone, Serialize, Deserialize, Debug)]
+pub struct Settings {
+    /// The Path of the Game's config directory
+    pub path: String,
+    pub gui_scale: f32,
+}
+
+/// Temporary Saves settings before they get applied
+#[derive(PartialEq, Clone, Serialize, Deserialize, Debug)]
+pub struct TempSettings {
+    pub settings: Settings,
+}
+
+impl Settings {
+    pub async fn new(path: &String) -> Settings {
+        Settings {
+            path: path.to_owned(),
+            gui_scale: 1.0,
+        }
+    }
+}
+
+/// A 2D Matrix
+#[derive(PartialEq, Clone, Serialize, Deserialize, Debug)]
+pub struct Matrix<T> {
+    pub data: BTreeMap<(i32, i32), T>
+}
+
+impl<T> Matrix<T> {
+    /// Creates a new empty [Matrix]
+    pub fn new() -> Self {
+        Self { data: BTreeMap::new() }
+    }
+
+    /// Insert a value at a specific position <br>
+    /// If a value already exists at that Position then that value will be overwritten
+    pub fn insert(&mut self, row: i32, col: i32, value: T) {
+        self.data.insert((row, col), value);
+    }
+
+    /// Get a value from a specific position
+    pub fn get(&self, row: i32, col: i32) -> Option<&T> {
+        self.data.get(&(row, col))
+    }
+
+    /// Get the lowest and highes colum/row <br>
+    /// `0` is min <br>
+    /// `1` is max
+    pub async fn bounds(&self) -> [Vec2i; 2] {
+        let min_row = self.data.keys().map(|(row, _)| row).min().unwrap_or(&0).to_owned();
+        let min_col = self.data.keys().map(|(_, colum)| colum).min().unwrap_or(&0).to_owned();
+        let max_row = self.data.keys().map(|(row, _)| row).max().unwrap_or(&0).to_owned();
+        let max_col = self.data.keys().map(|(_, colum)| colum).max().unwrap_or(&0).to_owned();
+        [
+            vec2i(min_row, min_col),
+            vec2i(max_row, max_col)
+        ]
     }
 }

@@ -2,7 +2,7 @@ use macroquad::color::Color;
 use macroquad::math::Vec2;
 use macroquad::prelude::{screen_height, screen_width};
 use macroquad::ui::root_ui;
-use crate::Settings;
+use crate::utils::structs::Settings;
 use crate::utils::enums::Scene;
 use crate::utils::text::draw_text_centered;
 

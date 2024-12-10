@@ -1,7 +1,7 @@
 use std::collections::BTreeMap;
 use macroquad::prelude::Texture2D;
 use crate::scenes::levels::structs::LevelSceneData;
-use crate::Settings;
+use crate::utils::structs::Settings;
 use crate::utils::enums::TextureKey;
 
 pub async fn render_level(level_scene_data: &mut LevelSceneData, textures: &BTreeMap<TextureKey, Vec<Texture2D>>, settings: &Settings) {

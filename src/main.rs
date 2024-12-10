@@ -14,8 +14,8 @@ use utils::enums::{Scene, SceneTextureKey, TextureKey};
 use crate::scenes::level_selector::level_selector;
 use crate::scenes::levels::levels::start_level;
 use crate::scenes::main_menu::main_menu;
-use serde::{Deserialize, Serialize};
 use scenes::levels::structs::LevelSceneData;
+use utils::structs::{Settings, TempSettings};
 use crate::scenes::settings_menu::settings_menu;
 
 fn window_conf() -> Conf {
@@ -29,33 +29,13 @@ fn window_conf() -> Conf {
     }
 }
 
-#[derive(PartialEq, Clone, Serialize, Deserialize, Debug)]
-pub struct Settings {
-    /// The Path of the Game's config directory
-    pub path: String,
-    pub gui_scale: f32,
-}
-
-
-/// Temporary Saves settings before they get applied
-#[derive(PartialEq, Clone, Serialize, Deserialize, Debug)]
-pub struct TempSettings {
-    pub settings: Settings,
-}
-
-impl Settings {
-    pub async fn new(path: &String) -> Settings {
-        Settings {
-            path: path.to_owned(),
-            gui_scale: 1.0,
-        }
-    }
-}
 
 // TODO: Implement proper UI
 
 #[macroquad::main(window_conf)]
 async fn main() {
+    let loading_handler = loading();
+
     let mut settings = {
         let config_path = format!("{}/JumboMumbo", config_dir().expect("Couldn't get config path").to_str().unwrap().to_owned());
 
@@ -135,14 +115,15 @@ async fn main() {
     }
     println!("Resolution: {}x{}", screen_width(), screen_height());
 
-    loading().await;
-
     // Holds the current scene
     let mut scene = Scene::MainMenu;
     // Holds all data of scenes (score, enemies ...)
     let mut level_scene_data = LevelSceneData::empty().await;
     // Holds all textures
     let mut textures = BTreeMap::<SceneTextureKey, BTreeMap<TextureKey, Vec<Texture2D>>>::new();
+
+    loading_handler.await;
+
     loop {
         clear_background(BLACK);
         // Depending on the Scene does something else
@@ -166,7 +147,7 @@ async fn main() {
     };
 }
 
-/// 100% True Loading Screen that is definitely not based on frames
+/// 100% True Loading Screen
 async fn loading() {
     let mut last_update = 1.0;
     let speed = 0.000005;

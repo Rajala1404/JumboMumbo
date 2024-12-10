@@ -8,7 +8,7 @@ use macroquad::window::screen_width;
 use macroquad_platformer::{Actor, World};
 use crate::logic::collider::Collider;
 use crate::scenes::levels::structs::Enemy;
-use crate::Settings;
+use crate::utils::structs::Settings;
 use crate::utils::enums::TextureKey;
 
 
