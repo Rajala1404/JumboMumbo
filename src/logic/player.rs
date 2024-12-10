@@ -7,7 +7,7 @@ use macroquad::prelude::{draw_texture_ex, get_frame_time, screen_height, Camera2
 use macroquad::window::screen_width;
 use macroquad_platformer::{Actor, World};
 use crate::logic::collider::Collider;
-use crate::scenes::levels::structs::Enemy;
+use crate::logic::enemy::Enemy;
 use crate::utils::structs::Settings;
 use crate::utils::enums::TextureKey;
 

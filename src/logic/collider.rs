@@ -3,7 +3,7 @@ use macroquad::math::Vec2;
 use macroquad::prelude::vec2;
 use macroquad::shapes::draw_rectangle_lines;
 use crate::logic::player::Player;
-use crate::scenes::levels::structs::Enemy;
+use crate::logic::enemy::Enemy;
 use crate::utils::structs::Settings;
 use crate::utils::structs::Rect;
 
