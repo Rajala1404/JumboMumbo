@@ -6,6 +6,7 @@ use macroquad::color::{WHITE};
 use crate::logic::collider::Collider;
 use crate::logic::player::Player;
 use crate::utils::enums::{Direction, TextureKey};
+use crate::utils::mathemann::plus_minus_range;
 use crate::utils::structs::{Matrix, Settings};
 
 #[derive(PartialEq, Clone, Debug)]
@@ -186,17 +187,18 @@ impl Enemy {
     }
 
     async fn tile_visible(&self, world: &World, row: &i32, col: &i32) -> bool {
-        let range = {
-            if col > &0 {
-                0..*col
-            } else if col < &0 {
-                *col..0
-            } else {
-                0..0
-            }
-        };
+        let col_range = plus_minus_range(*col, 0);
+        let row_range = plus_minus_range(*row, 0);
 
-        for col in range {
+
+        for row in row_range.await {
+            let collider_pos = self.colliders.get(row, *col).unwrap().pos().await;
+            if world.collide_check(self.world_collider, collider_pos) {
+                return false
+            }
+        }
+
+        for col in col_range.await {
             let collider_pos = self.colliders.get(*row, col).unwrap().pos().await;
             if world.collide_check(self.world_collider, collider_pos) {
                 return false
