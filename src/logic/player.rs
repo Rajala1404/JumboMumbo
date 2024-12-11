@@ -55,12 +55,12 @@ impl Player {
 
         // If the player is hitting the sealing reset the velocity to 0
         if sealing_hit {
-            self.speed.y = 50.0 * settings.gui_scale
+            self.speed.y = (100.0 * settings.gui_scale) * get_frame_time(); // I have no idea why but if this doesn't get multiplied by the frame time its inconsistent on different Frame Rates
         }
 
         // If the player is not on the ground change velocity of y to 500 (to simulate gravity)
         if !on_ground {      // multiplies by get_frame_time() so the speed is on all refresh rates the same
-            self.speed.y += 32.0 * settings.gui_scale;
+            self.speed.y += (4800.0 * settings.gui_scale) * get_frame_time();
         } else {
             self.speed.y = 0.0;
         }

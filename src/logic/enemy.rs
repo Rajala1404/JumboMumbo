@@ -91,11 +91,11 @@ impl Enemy {
         let sealing_hit = world.collide_check(self.world_collider, pos + vec2(0.0, -1.0));
 
         if sealing_hit {
-            self.speed.y = 50.0 * settings.gui_scale
+            self.speed.y = (100.0 * settings.gui_scale) * get_frame_time(); // I have no idea why but if this doesn't get multiplied by the frame time its inconsistent on different Frame Rates
         }
 
         if !on_ground {
-            self.speed.y += 32.0 * settings.gui_scale;
+            self.speed.y += (4800.0 * settings.gui_scale) * get_frame_time();
         } else {
             self.waiters.remove(&EnemyWaiter::Jumping);
             self.speed.y = 0.0;
