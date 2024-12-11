@@ -3,7 +3,6 @@ use macroquad_platformer::{Actor, World};
 use std::collections::BTreeMap;
 use macroquad::prelude::{draw_texture_ex, get_frame_time, DrawTextureParams, Texture2D};
 use macroquad::color::{WHITE};
-use stopwatch2::Stopwatch;
 use crate::logic::collider::Collider;
 use crate::logic::player::Player;
 use crate::utils::enums::{Direction, TextureKey};
@@ -142,7 +141,9 @@ impl Enemy {
                     self.waiters.insert(EnemyWaiter::Jumping, true);
                 }
 
-                if touched_right {
+                if self.colliders.get(0, 0).unwrap().touching_player(player).await {
+
+                } else if touched_right {
                     self.behavior.push(EnemyBehavior::Move(Direction::Right));
                     self.waiters.insert(EnemyWaiter::IdlingDirection, true);
                 } else if touched_left {
