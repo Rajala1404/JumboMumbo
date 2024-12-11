@@ -3,6 +3,7 @@ use macroquad_platformer::{Actor, World};
 use std::collections::BTreeMap;
 use macroquad::prelude::{draw_texture_ex, get_frame_time, DrawTextureParams, Texture2D};
 use macroquad::color::{WHITE};
+use stopwatch2::Stopwatch;
 use crate::logic::collider::Collider;
 use crate::logic::player::Player;
 use crate::utils::enums::{Direction, TextureKey};
@@ -104,7 +105,6 @@ impl Enemy {
 
         // DI (Dumb intelligence)
         match self.state {
-            // TODO: Fix speed difference if solid is above Enemy
             EnemyState::Attacking => {
                 let touched_right = {
                     let mut result = false;
@@ -149,11 +149,7 @@ impl Enemy {
                     self.behavior.push(EnemyBehavior::Move(Direction::Left));
                     self.waiters.insert(EnemyWaiter::IdlingDirection, false);
                 } else {
-                    self.state = EnemyState::Idling
-                }
-
-                if world.collide_check(self.world_collider, pos + vec2(0.0, -self.size.y * 2.0)) {
-                    self.state = EnemyState::Idling
+                    self.state = EnemyState::Idling;
                 }
             },
             EnemyState::Idling => {
