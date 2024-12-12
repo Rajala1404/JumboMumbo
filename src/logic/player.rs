@@ -17,6 +17,7 @@ use crate::utils::enums::TextureKey;
 
 #[derive(PartialEq, Copy, Clone)]
 pub struct Player {
+    pub health: u32,
     pub width: f32,
     pub height: f32,
     /// 0: Left <br>
@@ -31,6 +32,7 @@ pub struct Player {
 impl Player {
     pub async fn new(width: f32, height: f32, pos: Vec2, state: i8, world: &mut World) -> Self {
         Player {
+            health: 1000,
             width,
             height,
             state,

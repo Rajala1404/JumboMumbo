@@ -56,8 +56,8 @@ impl Enemy {
             result.insert(0, 0, Collider::new_enemy(pos, width, height, vec2(0.0, 0.0)).await);
 
             // Insert collider that go around
-            for row in -3..4 {
-                for col in -2..3 {
+            for row in -4..5 {
+                for col in -3..3 {
                     if result.get(row, col).is_none() {
                         result.insert(row, col, Collider::new_trigger(vec2(size.x * row as f32, size.y * col as f32), size.x, size.y, vec2(size.x * row as f32, size.y * col as f32)).await)
                     }
@@ -105,6 +105,21 @@ impl Enemy {
         // DI (Dumb intelligence)
         match self.state {
             EnemyState::Attacking => {
+                // Jump if colliding with a wall
+                if self.is_touching_wall(world).await {
+                    self.behavior.push(EnemyBehavior::Move(Direction::Up));
+                    self.waiters.insert(EnemyWaiter::Jumping, true);
+                }
+
+                let player_camping = {
+                    for ((row, col), collider) in &self.colliders {
+                        // I only care if player is above me
+                        if !(col >= &-1) && ((row < &-1  && !(row > &1))|| (row > &1 && !(row < &-1))) && collider.touching_player(player).await {
+                            self.behavior.push(EnemyBehavior::Move(Direction::Up))
+                        }
+                    }
+                };
+
                 let touched_right = {
                     let mut result = false;
                     for ((row, col), collider) in &self.colliders {
@@ -135,12 +150,6 @@ impl Enemy {
                     result
                 };
 
-                // Jump if colliding with a wall
-                if self.is_touching_wall(world).await {
-                    self.behavior.push(EnemyBehavior::Move(Direction::Up));
-                    self.waiters.insert(EnemyWaiter::Jumping, true);
-                }
-
                 if self.colliders.get(0, 0).unwrap().touching_player(player).await {
 
                 } else if touched_right {
@@ -157,6 +166,7 @@ impl Enemy {
                 let touched = {
                     let mut result = false;
                     for ((row, col), collider) in &self.colliders {
+                        if (row < &-3  && !(row > &3)) || (row > &3 && !(row < &-3)) { continue; }
                         if collider.touching_player(player).await {
                             if !self.tile_visible(world, row, col).await {
                                 continue;
@@ -204,13 +214,15 @@ impl Enemy {
                 EnemyBehavior::Move(direction) => {
                     match direction {
                         Direction::Right => {
-                            self.speed.x = 600.0 * settings.gui_scale;
+                            self.speed.x = 700.0 * settings.gui_scale;
                         }
                         Direction::Left => {
-                            self.speed.x = -600.0 * settings.gui_scale;
+                            self.speed.x = -700.0 * settings.gui_scale;
                         }
                         Direction::Up => {
-                            self.speed.y = 1900.0 * -settings.gui_scale;
+                            if on_ground {
+                                self.speed.y = 1900.0 * -settings.gui_scale;
+                            }
                         }
                         _ => unimplemented!()
                     }
