@@ -17,7 +17,7 @@ use crate::utils::enums::TextureKey;
 
 #[derive(PartialEq, Copy, Clone)]
 pub struct Player {
-    pub health: u32,
+    pub health: i16,
     pub width: f32,
     pub height: f32,
     /// 0: Left <br>
