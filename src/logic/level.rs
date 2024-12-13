@@ -21,6 +21,7 @@ pub async fn render_level(level_scene_data: &mut LevelSceneData, textures: &BTre
             let platforms = &level_scene_data.level_data.platforms;
             let collectibles = &mut level_scene_data.level_data.collectibles;
             let enemies = &level_scene_data.level_data.enemies;
+            let projectiles = &level_scene_data.level_data.projectiles;
 
             // Render Player
             level_scene_data.level_data.player.as_mut().unwrap().render(&world, textures, settings).await;
@@ -38,6 +39,11 @@ pub async fn render_level(level_scene_data: &mut LevelSceneData, textures: &BTre
             // Render enemies
             for enemy in enemies {
                 enemy.render(textures).await;
+            }
+
+            // Render projectiles
+            for projectile in projectiles {
+                projectile.render(textures).await;
             }
         }
     }
@@ -60,11 +66,35 @@ pub async fn tick_level(level_scene_data: &mut LevelSceneData, settings: &Settin
     }
     { // Tick enemies
         let enemies = &mut level_scene_data.level_data.enemies;
+        let projectiles = &mut level_scene_data.level_data.projectiles;
         let world = &mut level_scene_data.world;
         let player = &mut level_scene_data.level_data.player.as_mut().unwrap();
 
         for enemy in enemies {
-            enemy.tick(world, player, settings).await;
+            enemy.tick(world, player, projectiles, settings).await;
+        }
+    }
+    { // Tick projectiles
+        let mut level_data = level_scene_data.level_data.clone();
+        let projectiles = &mut level_scene_data.level_data.projectiles;
+
+        let mut projectiles_to_remove = Vec::new();
+
+        for (i, projectile) in projectiles.iter_mut().enumerate() {
+            projectile.tick(&level_data).await;
+            level_data.projectiles.remove(i);
+            level_data.projectiles.insert(i, projectile.clone());
+
+            if projectile.deletable {
+                projectiles_to_remove.push(i);
+            }
+        }
+        level_scene_data.level_data = level_data;
+
+        for projectile in projectiles_to_remove {
+            if projectile < level_scene_data.level_data.projectiles.len() {
+                level_scene_data.level_data.projectiles.remove(projectile);
+            }
         }
     }
 }

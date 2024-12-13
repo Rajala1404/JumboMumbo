@@ -1,7 +1,7 @@
 use std::collections::BTreeMap;
 use macroquad::camera::set_camera;
 use macroquad::color::{Color, RED, WHITE};
-use macroquad::input::{is_key_down, KeyCode};
+use macroquad::input::{is_key_down, is_mouse_button_pressed, mouse_position, KeyCode, MouseButton};
 use macroquad::math::{vec2, Vec2};
 use macroquad::prelude::{draw_texture_ex, get_frame_time, screen_height, Camera2D, DrawTextureParams, Rect, Texture2D};
 use macroquad::shapes::draw_rectangle;
@@ -9,9 +9,10 @@ use macroquad::time::get_time;
 use macroquad::window::screen_width;
 use macroquad_platformer::{Actor, World};
 use crate::logic::collider::Collider;
-use crate::scenes::levels::structs::{LevelData, Trigger};
+use crate::scenes::levels::structs::{LevelData, Projectile, ProjectileOrigin, Trigger};
 use crate::utils::structs::Settings;
 use crate::utils::enums::TextureKey;
+use crate::utils::mathemann::point_to_point_direction_with_speed;
 // This file contains everything that is for the player
 
 #[derive(PartialEq, Clone)]
@@ -36,7 +37,7 @@ pub struct Player {
 #[derive(PartialEq, Eq, Clone, Ord, PartialOrd, Copy)]
 pub enum PlayerTrigger {
     Damage,
-
+    ShootTimeout
 }
 
 impl Player {
@@ -105,7 +106,7 @@ impl Player {
         }
 
         self.perform_move(world).await;
-        self.tick(level_data).await;
+        self.tick(level_data, world, settings).await;
 
         let pos = world.actor_pos(self.collider);
 
@@ -140,7 +141,7 @@ impl Player {
         }
     }
 
-    pub async fn tick(&mut self, level_data: &mut LevelData) {
+    pub async fn tick(&mut self, level_data: &mut LevelData, world: &World, settings: &Settings) {
         let enemies = &level_data.enemies;
         let colliding_enemies = self.collider_new.collide_check_enemy(enemies, vec2(0.0, 0.0)).await;
         if !colliding_enemies.is_empty() {
@@ -161,6 +162,36 @@ impl Player {
 
         if self.health == 0 {
             level_data.triggers.insert(Trigger::GameOver, true);
+        }
+
+        if !self.triggers.get(&PlayerTrigger::ShootTimeout).unwrap_or(&false) {
+            if is_mouse_button_pressed(MouseButton::Left) {
+                let pos = world.actor_pos(self.collider) + vec2(self.width / 2.0, self.height / 2.0);
+                let pos_c = world.actor_pos(self.camera_collider[0]);
+                let (mut mouse_x, mut mouse_y) = mouse_position();
+                mouse_x += pos_c.x;
+                mouse_y += pos_c.y;
+
+                let movement_vector = {
+                    let (x, y) = point_to_point_direction_with_speed((pos.x, pos.y), (mouse_x, mouse_y), 1000.0).await;
+                    vec2(x, y)
+                };
+
+                let projectile  = Projectile::new(
+                    pos,
+                    vec2(32.0, 32.0) * settings.gui_scale,
+                    -25,
+                    4.0,
+                    TextureKey::Coin0, ProjectileOrigin::Player, -movement_vector).await;
+
+                self.triggers.insert(PlayerTrigger::ShootTimeout, true);
+                self.triggers_exec.insert(PlayerTrigger::ShootTimeout, get_time());
+
+                level_data.projectiles.push(projectile);
+            }
+        } else if self.triggers_exec.get(&PlayerTrigger::ShootTimeout).unwrap_or(&0.0) + 0.1 < get_time() {
+            self.triggers.remove(&PlayerTrigger::ShootTimeout);
+            self.triggers_exec.remove(&PlayerTrigger::ShootTimeout);
         }
     }
 

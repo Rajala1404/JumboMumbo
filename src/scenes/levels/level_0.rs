@@ -1,4 +1,4 @@
-use crate::scenes::levels::helper;
+use crate::logic::level;
 use std::collections::BTreeMap;
 use crate::Settings;
 use macroquad::prelude::*;
@@ -43,11 +43,13 @@ pub async fn level_0(scene: &mut Scene, mut textures: &mut BTreeMap<SceneTexture
         return;
     }
 
-    helper::tick_level(level_scene_data, settings).await;
-    helper::render_level(level_scene_data, &textures, settings).await;
+    level::tick_level(level_scene_data, settings).await;
+    level::render_level(level_scene_data, &textures, settings).await;
 
     debugger::check(&mut level_scene_data.level_data.triggers, &mut level_scene_data.level_data.trigger_locks).await;
     debugger::render(level_scene_data, settings).await;
+
+    if level_scene_data.level_data.projectiles.iter().count() > 3000 { panic!() }
 }
 
 async fn layout(settings: &Settings) -> LevelSceneData {
@@ -67,6 +69,7 @@ async fn layout(settings: &Settings) -> LevelSceneData {
         platforms.push(
             Platform {
                 collider: world.add_solid(pos, screen_width() as i32 * 3, (screen_height() / 32.0) as i32 ),
+                collider_new: Collider::new_solid(pos,screen_width() * 3.0, screen_height() / 32.0, vec2(0.0, 0.0)).await,
                 tile_size: size,
                 tiles: vec![],
                 speed: nv2
@@ -100,6 +103,7 @@ async fn layout(settings: &Settings) -> LevelSceneData {
 
         platforms.push(Platform{
             collider: world.add_solid(pos, (width * 41.0) as i32, height as i32),
+            collider_new: Collider::new_solid(pos,width * 41.0, height, vec2(0.0, 0.0)).await,
             tile_size: size,
             tiles,
             speed: nv2
@@ -155,6 +159,7 @@ async fn layout(settings: &Settings) -> LevelSceneData {
             platforms,
             collectibles,
             enemies,
+            projectiles: Vec::new(),
             triggers: BTreeMap::new(),
             trigger_locks: BTreeMap::new() },
         world

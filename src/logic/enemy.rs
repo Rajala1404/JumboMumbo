@@ -5,6 +5,7 @@ use macroquad::prelude::{draw_texture_ex, get_frame_time, DrawTextureParams, Tex
 use macroquad::color::{WHITE};
 use crate::logic::collider::Collider;
 use crate::logic::player::Player;
+use crate::scenes::levels::structs::{Projectile, ProjectileOrigin};
 use crate::utils::enums::{Direction, TextureKey};
 use crate::utils::mathemann::plus_minus_range;
 use crate::utils::structs::{Matrix, Settings};
@@ -12,6 +13,7 @@ use crate::utils::structs::{Matrix, Settings};
 #[derive(PartialEq, Clone, Debug)]
 pub struct Enemy {
     pub size: Vec2,
+    pub health: i16,
     pub texture_key: TextureKey,
     pub pos: Vec2,
     pub start_pos: Vec2,
@@ -71,6 +73,7 @@ impl Enemy {
 
         Self {
             size,
+            health: 1000,
             texture_key,
             pos: pos + vec2(1.0, 0.0),
             start_pos: pos,
@@ -84,7 +87,7 @@ impl Enemy {
         }
     }
 
-    pub async fn tick(&mut self, world: &mut World, player: &mut Player, settings: &Settings) {
+    pub async fn tick(&mut self, world: &mut World, player: &mut Player, projectiles: &Vec<Projectile>, settings: &Settings) {
 
         // The same as for the player
         // SP Start
@@ -105,6 +108,21 @@ impl Enemy {
         }
         // SP End
 
+        let colliding_projectiles = self.colliders.get(0, 0).unwrap().collide_check_projectile(projectiles, vec2(0.0, 0.0)).await;
+        if !colliding_projectiles.is_empty() {
+            for projectile in colliding_projectiles {
+                let projectile = projectiles.get(projectile);
+                if projectile.is_some() {
+                    if projectile.unwrap().origin == ProjectileOrigin::Player {
+                        self.health += projectile.unwrap().damage;
+                        if self.health < 0 {
+                            self.health = 0;
+                        }
+                    }
+                }
+            }
+        }
+
         // DI (Dumb intelligence)
         match self.state {
             EnemyState::Attacking => {
@@ -114,14 +132,12 @@ impl Enemy {
                     self.waiters.insert(EnemyWaiter::Jumping, true);
                 }
 
-                let player_camping = {
-                    for ((row, col), collider) in &self.colliders {
-                        // I only care if player is above me
-                        if !(col >= &-1) && ((row < &-1  && !(row > &1))|| (row > &1 && !(row < &-1))) && collider.touching_player(player).await {
-                            self.behavior.push(EnemyBehavior::Move(Direction::Up))
-                        }
+                for ((row, col), collider) in &self.colliders {
+                    // I only care if player is above me
+                    if !(col >= &-1) && ((row < &-1  && !(row > &1))|| (row > &1 && !(row < &-1))) && collider.touching_player(player).await {
+                        self.behavior.push(EnemyBehavior::Move(Direction::Up))
                     }
-                };
+                }
 
                 let touched_right = {
                     let mut result = false;

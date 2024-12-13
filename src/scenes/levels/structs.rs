@@ -5,12 +5,13 @@ use macroquad_platformer::{Solid, World};
 use std::collections::BTreeMap;
 use macroquad::prelude::{draw_texture_ex, DrawTextureParams, Texture2D};
 use macroquad::color::WHITE;
+use macroquad::time::{get_frame_time, get_time};
 use crate::logic::collider::Collider;
 use crate::logic::enemy::Enemy;
 use crate::logic::player::Player;
 use crate::utils::enums::{Animation, AnimationType, TextureKey};
 /// This enum defines all existing levels
-#[derive(PartialEq, Clone)]
+#[derive(Eq, PartialEq, Clone, Ord, PartialOrd, Debug)]
 pub enum Level {
     Level0,
 }
@@ -31,6 +32,7 @@ pub struct LevelData {
     pub platforms: Vec<Platform>,
     pub collectibles: Vec<Collectible>,
     pub enemies: Vec<Enemy>,
+    pub projectiles: Vec<Projectile>,
     /// Saves temporary triggers / settings
     pub triggers: BTreeMap<Trigger, bool>,
     pub trigger_locks: BTreeMap<Trigger, bool>
@@ -50,6 +52,7 @@ impl LevelSceneData {
             platforms: Vec::new(),
             collectibles: Vec::new(),
             enemies: Vec::new(),
+            projectiles: Vec::new(),
             triggers: BTreeMap::new(),
             trigger_locks: BTreeMap::new()
         };
@@ -64,14 +67,16 @@ impl LevelSceneData {
 #[derive(PartialEq, Clone)]
 pub struct Platform {
     pub collider: Solid,
+    pub collider_new: Collider,
     pub tile_size: Vec2,
     pub tiles: Vec<PlatformTile>,
     pub speed: Vec2,
 }
 
 impl Platform {
-    pub async fn new(collider: Solid, tile_size: Vec2, tiles: Vec<PlatformTile>, speed: Vec2) -> Self {
-        Self { collider, tile_size, tiles, speed }
+    pub async fn new(collider: Solid, pos: Vec2, size: Vec2, tile_size: Vec2, tiles: Vec<PlatformTile>, speed: Vec2) -> Self {
+        let collider_new = Collider::new_solid(pos, size.x, size.y, vec2(0.0, 0.0)).await;
+        Self { collider, collider_new, tile_size, tiles, speed }
     }
 
     /// Basic Floating platform
@@ -99,12 +104,16 @@ impl Platform {
             pos: vec2(length as f32, 0.0),
         });
 
-        Platform{
-            collider: world.add_solid(pos, (tile_size.x * (length + 1) as f32) as i32 , tile_size.y as i32),
+        let width = tile_size.x * (length + 1) as f32;
+
+        Self::new(
+            world.add_solid(pos, width as i32, tile_size.y as i32),
+            pos,
+            vec2(width, tile_size.y),
             tile_size,
             tiles,
-            speed: vec2(0.0, 0.0),
-        }
+            vec2(0.0, 0.0)
+        ).await
     }
 
     pub async fn render(&self, textures: &BTreeMap<TextureKey, Vec<Texture2D>>, world: &World) {
@@ -184,3 +193,69 @@ impl Collectible {
     }
 }
 
+#[derive(PartialEq, Clone, Debug)]
+pub struct Projectile {
+    pub active: bool,
+    pub deletable: bool,
+    pub pos: Vec2,
+    pub size: Vec2,
+    pub start_time: f64,
+    pub max_time: f64,
+    pub collider: Collider,
+    pub damage: i16,
+    pub texture_key: TextureKey,
+    pub origin: ProjectileOrigin,
+    pub speed: Vec2,
+}
+
+#[derive(Eq, PartialEq, Clone, Ord, PartialOrd, Debug)]
+pub enum ProjectileOrigin {
+    Player,
+}
+
+impl Projectile {
+    pub async fn new(pos: Vec2, size: Vec2, damage: i16, max_time: f64, texture_key: TextureKey, origin: ProjectileOrigin, speed: Vec2) -> Self {
+        let start_time = get_time();
+        let collider = Collider::new_projectile(pos, size.x, size.y, vec2(0.0, 0.0)).await;
+
+        Self {
+            active: true,
+            deletable: false,
+            pos,
+            size,
+            start_time,
+            max_time,
+            collider,
+            damage,
+            texture_key,
+            origin,
+            speed,
+        }
+    }
+
+    pub async fn tick(&mut self, level_data: &LevelData) {
+        if !self.collider.collide_check_platform(&level_data.platforms, vec2(0.0, 0.0)).await.is_empty() || self.start_time + self.max_time < get_time(){
+            self.active = false;
+            self.deletable = true;
+        } else {
+            self.perform_move().await;
+        }
+    }
+
+    async fn perform_move(&mut self) {
+        let new_pos = self.pos + self.speed * get_frame_time();
+        self.pos = new_pos;
+        self.collider.change_pos(self.pos).await;
+    }
+
+    // TODO: Implement Animation
+    pub async fn render(&self, textures: &BTreeMap<TextureKey, Vec<Texture2D>>) {
+        draw_texture_ex(
+            &textures.get(&self.texture_key).unwrap().get(0).unwrap(), self.pos.x, self.pos.y, WHITE,
+            DrawTextureParams {
+                dest_size: Some(vec2(self.size.x, self.size.y)),
+                ..Default::default()
+            },
+        );
+    }
+}

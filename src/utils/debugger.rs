@@ -48,9 +48,23 @@ pub async fn render(level_scene_data: &LevelSceneData, settings: &Settings) {
             }
         };
 
+        let platforms = async {
+            for platform in &level_scene_data.level_data.platforms {
+                platform.collider_new.debug_render(settings).await;
+            }
+        };
+
+        let projectiles = async {
+            for projectile in &level_scene_data.level_data.projectiles {
+                projectile.collider.debug_render(settings).await;
+            }
+        };
+
         level_scene_data.level_data.player.as_ref().unwrap().collider_new.debug_render(settings).await;
         collectibles.await;
         enemies.await;
+        platforms.await;
+        projectiles.await;
     }
 
     if is_active(Trigger::ShowFPS, triggers).await {
@@ -61,14 +75,14 @@ pub async fn render(level_scene_data: &LevelSceneData, settings: &Settings) {
     }
 }
 
+async fn is_active(trigger: Trigger, triggers: &BTreeMap<Trigger, bool>) -> bool {
+    triggers.get(&trigger).unwrap_or(&false).to_owned()
+}
+
 pub async fn check(triggers: &mut BTreeMap<Trigger, bool>, trigger_locks: &mut BTreeMap<Trigger, bool>) {
     debug_key_combo(KeyCode::C, Trigger::ShowCameraColliders, triggers, trigger_locks).await;
     debug_key_combo(KeyCode::H, Trigger::ShowColliders, triggers, trigger_locks).await;
     debug_key_combo(KeyCode::F, Trigger::ShowFPS, triggers, trigger_locks).await;
-}
-
-async fn is_active(trigger: Trigger, triggers: &BTreeMap<Trigger, bool>) -> bool {
-    triggers.get(&trigger).unwrap_or(&false).to_owned()
 }
 
 async fn debug_key_combo(key: KeyCode, trigger: Trigger, triggers: &mut BTreeMap<Trigger, bool>, trigger_locks: &mut BTreeMap<Trigger, bool>) {
