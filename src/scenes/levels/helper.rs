@@ -6,12 +6,12 @@ use crate::utils::enums::TextureKey;
 
 pub async fn render_level(level_scene_data: &mut LevelSceneData, textures: &BTreeMap<TextureKey, Vec<Texture2D>>, settings: &Settings) {
     let world = &level_scene_data.world;
-    let platforms = &level_scene_data.platforms;
-    let collectibles = &mut level_scene_data.collectibles;
-    let enemies = &level_scene_data.enemies;
+    let platforms = &level_scene_data.level_data.platforms;
+    let collectibles = &mut level_scene_data.level_data.collectibles;
+    let enemies = &level_scene_data.level_data.enemies;
 
     // Render Player
-    level_scene_data.player.as_mut().unwrap().render(&world, textures, settings).await;
+    level_scene_data.level_data.player.as_mut().unwrap().render(&world, textures, settings).await;
 
     // Render Platforms
     for platform in platforms {
@@ -33,21 +33,21 @@ pub async fn tick_level(level_scene_data: &mut LevelSceneData, settings: &Settin
     {   // Tick collectibles
         let mut collectibles_to_remove = Vec::new();
 
-        for (i, collectible) in level_scene_data.collectibles.iter_mut().enumerate() {
-            collectible.check(level_scene_data.player.as_ref().unwrap()).await;
+        for (i, collectible) in level_scene_data.level_data.collectibles.iter_mut().enumerate() {
+            collectible.check(level_scene_data.level_data.player.as_ref().unwrap()).await;
             if collectible.collected {
                 collectibles_to_remove.push(i);
             }
         }
 
         for i in collectibles_to_remove {
-            level_scene_data.collectibles.remove(i);
+            level_scene_data.level_data.collectibles.remove(i);
         }
     }
     { // Tick enemies
-        let enemies = &mut level_scene_data.enemies;
+        let enemies = &mut level_scene_data.level_data.enemies;
         let world = &mut level_scene_data.world;
-        let player = &mut level_scene_data.player.as_mut().unwrap();
+        let player = &mut level_scene_data.level_data.player.as_mut().unwrap();
 
         for enemy in enemies {
             enemy.tick(world, player, settings).await;

@@ -22,30 +22,39 @@ pub enum Trigger {
     ShowFPS,
 }
 
-/// Holds all data a level can possibly have
-pub struct LevelSceneData {
+#[derive(Clone)]
+pub struct LevelData {
     pub level: Option<Level>,
     pub player: Option<Player>,
     pub platforms: Vec<Platform>,
     pub collectibles: Vec<Collectible>,
     pub enemies: Vec<Enemy>,
-    pub world: World,
     /// Saves temporary triggers / settings
     pub triggers: BTreeMap<Trigger, bool>,
-    pub trigger_locks: BTreeMap<Trigger, bool>,
+    pub trigger_locks: BTreeMap<Trigger, bool>
+}
+
+/// Holds all data a level can possibly have
+pub struct LevelSceneData {
+    pub level_data: LevelData,
+    pub world: World,
 }
 
 impl LevelSceneData {
     pub async fn empty() -> Self {
-        Self {
+        let level_data = LevelData {
             level: None,
             player: None,
             platforms: Vec::new(),
             collectibles: Vec::new(),
             enemies: Vec::new(),
-            world: World::new(),
             triggers: BTreeMap::new(),
             trigger_locks: BTreeMap::new()
+        };
+
+        Self {
+            level_data,
+            world: World::new(),
         }
     }
 }

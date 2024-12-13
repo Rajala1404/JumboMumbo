@@ -7,7 +7,7 @@ use stopwatch2::Stopwatch;
 use crate::logic::collider::Collider;
 use crate::logic::enemy::Enemy;
 use crate::logic::player::Player;
-use crate::scenes::levels::structs::{Collectible, Level, LevelSceneData, Platform, PlatformTile};
+use crate::scenes::levels::structs::{Collectible, Level, LevelData, LevelSceneData, Platform, PlatformTile};
 use crate::utils::debugger;
 use crate::utils::enums::{Animation, AnimationType, Scene, SceneTextureKey, TextureKey};
 use crate::utils::texture::{get_texture_path, load_textures_from_tile_map};
@@ -22,13 +22,13 @@ pub async fn level_0(scene: &mut Scene, mut textures: &mut BTreeMap<SceneTexture
     let textures = textures.get(&SceneTextureKey::Level0).unwrap();
 
     // Load scene data for right level
-    if level_scene_data.level != Some(Level::Level0) {
+    if level_scene_data.level_data.level != Some(Level::Level0) {
         *level_scene_data = layout(settings).await;
     }
 
     let mut world = &mut level_scene_data.world;
-    let player = level_scene_data.player.as_mut().unwrap();
-    let enemies = &level_scene_data.enemies;
+    let player = level_scene_data.level_data.player.as_mut().unwrap();
+    let enemies = &level_scene_data.level_data.enemies;
 
     player.control(&mut world, enemies, settings).await;
 
@@ -42,7 +42,7 @@ pub async fn level_0(scene: &mut Scene, mut textures: &mut BTreeMap<SceneTexture
     helper::tick_level(level_scene_data, settings).await;
     helper::render_level(level_scene_data, &textures, settings).await;
 
-    debugger::check(&mut level_scene_data.triggers, &mut level_scene_data.trigger_locks).await;
+    debugger::check(&mut level_scene_data.level_data.triggers, &mut level_scene_data.level_data.trigger_locks).await;
     debugger::render(level_scene_data, settings).await;
 }
 
@@ -147,14 +147,8 @@ async fn layout(settings: &Settings) -> LevelSceneData {
     }
 
     LevelSceneData {
-        level: Some(Level::Level0),
-        player: Some(Player::new(width, height, vec2(pos.x, nv2.y), 0, &mut world).await),
-        platforms,
-        collectibles,
-        enemies,
-        world,
-        triggers: BTreeMap::new(),
-        trigger_locks: BTreeMap::new()
+        level_data: LevelData { level: Some(Level::Level0), player: Some(Player::new(width, height, vec2(pos.x, nv2.y), 0, &mut world).await), platforms, collectibles, enemies, triggers: BTreeMap::new(), trigger_locks: BTreeMap::new() },
+        world
     }
 }
 

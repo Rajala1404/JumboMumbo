@@ -26,21 +26,21 @@ pub async fn draw_camera_collider(world: &World, player: &Player, settings: &Set
 }
 
 pub async fn render(level_scene_data: &LevelSceneData, settings: &Settings) {
-    let player = level_scene_data.player.as_ref().unwrap();
+    let player = level_scene_data.level_data.player.as_ref().unwrap();
     let world = &level_scene_data.world;
-    let triggers = &level_scene_data.triggers;
+    let triggers = &level_scene_data.level_data.triggers;
 
     if is_active(Trigger::ShowCameraColliders, triggers).await { draw_camera_collider(world, player, settings).await; }
 
     if is_active(Trigger::ShowColliders, triggers).await {
         let collectibles = async {
-            for collectible in &level_scene_data.collectibles {
+            for collectible in &level_scene_data.level_data.collectibles {
                 collectible.collider.debug_render(settings).await;
             }
         };
 
         let enemies = async {
-            for enemy in &level_scene_data.enemies {
+            for enemy in &level_scene_data.level_data.enemies {
                 let iter_colliders: Vec<Collider> = enemy.colliders.clone().into();
                 for collider in iter_colliders {
                     collider.debug_render(settings).await;
@@ -48,13 +48,13 @@ pub async fn render(level_scene_data: &LevelSceneData, settings: &Settings) {
             }
         };
 
-        level_scene_data.player.as_ref().unwrap().collider_new.debug_render(settings).await;
+        level_scene_data.level_data.player.as_ref().unwrap().collider_new.debug_render(settings).await;
         collectibles.await;
         enemies.await;
     }
 
     if is_active(Trigger::ShowFPS, triggers).await {
-        let camera_pos = world.actor_pos(level_scene_data.player.as_ref().unwrap().camera_collider[0]);
+        let camera_pos = world.actor_pos(level_scene_data.level_data.player.as_ref().unwrap().camera_collider[0]);
         let text = get_fps().to_string();
         let size = measure_text(&text, None, (32.0 * settings.gui_scale) as _, 1.0);
         draw_text(&text, camera_pos.x, size.height, 32.0 * settings.gui_scale, GRAY);
