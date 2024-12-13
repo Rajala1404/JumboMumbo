@@ -1,23 +1,23 @@
 use std::collections::BTreeMap;
 use macroquad::camera::set_camera;
-use macroquad::color::WHITE;
+use macroquad::color::{Color, RED, WHITE};
 use macroquad::input::{is_key_down, KeyCode};
 use macroquad::math::{vec2, Vec2};
 use macroquad::prelude::{draw_texture_ex, get_frame_time, screen_height, Camera2D, DrawTextureParams, Rect, Texture2D};
+use macroquad::shapes::draw_rectangle;
+use macroquad::time::get_time;
 use macroquad::window::screen_width;
 use macroquad_platformer::{Actor, World};
 use crate::logic::collider::Collider;
 use crate::logic::enemy::Enemy;
 use crate::utils::structs::Settings;
 use crate::utils::enums::TextureKey;
-
-
-
 // This file contains everything that is for the player
 
-#[derive(PartialEq, Copy, Clone)]
+#[derive(PartialEq, Clone)]
 pub struct Player {
     pub health: i16,
+    pub color: Color,
     pub width: f32,
     pub height: f32,
     /// 0: Left <br>
@@ -27,12 +27,23 @@ pub struct Player {
     pub collider_new: Collider,
     pub camera_collider: [Actor; 2],
     pub speed: Vec2,
+    /// All triggers and if a Trigger is active or not
+    pub triggers: BTreeMap<PlayerTrigger, bool>,
+    /// Contains the last time a trigger was executed
+    pub triggers_exec: BTreeMap<PlayerTrigger, f64>,
+}
+
+#[derive(PartialEq, Eq, Clone, Ord, PartialOrd, Copy)]
+pub enum PlayerTrigger {
+    Damage,
+
 }
 
 impl Player {
     pub async fn new(width: f32, height: f32, pos: Vec2, state: i8, world: &mut World) -> Self {
         Player {
             health: 1000,
+            color: WHITE,
             width,
             height,
             state,
@@ -43,6 +54,8 @@ impl Player {
                 world.add_actor(vec2(screen_width() - (screen_width() / 4.0), 0.0), (screen_width() / 4.0) as i32, screen_height() as i32),
             ],
             speed: vec2(0.0, 0.0),
+            triggers: BTreeMap::new(),
+            triggers_exec: BTreeMap::new(),
         }
     }
 
@@ -91,7 +104,8 @@ impl Player {
             }
         }
 
-        self.perform_move(enemies, world).await;
+        self.perform_move(world).await;
+        self.tick(enemies).await;
 
         let pos = world.actor_pos(self.collider);
 
@@ -126,8 +140,27 @@ impl Player {
         }
     }
 
+    pub async fn tick(&mut self, enemies: &Vec<Enemy>) {
+        let colliding_enemies = self.collider_new.collide_check_enemy(enemies, vec2(0.0, 0.0)).await;
+        if !colliding_enemies.is_empty() {
+            for enemy in colliding_enemies {
+                let damage = enemies.get(enemy).expect("Oh no! This should be impossible!").damage;
+                self.damage(damage).await;
+            }
+        }
+
+        if *self.triggers.get(&PlayerTrigger::Damage).unwrap_or(&false) {
+            self.color = RED;
+            if self.triggers_exec.get(&PlayerTrigger::Damage).unwrap() + 0.5 < get_time() {
+                self.triggers.remove(&PlayerTrigger::Damage);
+                self.triggers_exec.remove(&PlayerTrigger::Damage);
+                self.color = WHITE;
+            }
+        }
+    }
+
     /// Moves the player and checks for all necessary things (like collision)
-    pub async fn perform_move(&mut self, enemies: &Vec<Enemy>, world: &mut World) {
+    pub async fn perform_move(&mut self, world: &mut World) {
         // Set positions using the previously defined speeds
         world.move_h(self.collider, self.speed.x * get_frame_time());
         world.move_v(self.collider, self.speed.y * get_frame_time());
@@ -136,15 +169,27 @@ impl Player {
         self.collider_new.change_pos(pos).await;
     }
 
-    pub async fn render(&mut self, world: &World, textures: &BTreeMap<TextureKey, Vec<Texture2D>>) {
+    pub async fn damage(&mut self, health: i16) {
+        self.health += health;
+        if self.health < 0 { self.health = 0; }
+        self.triggers.insert(PlayerTrigger::Damage, true);
+        self.triggers_exec.insert(PlayerTrigger::Damage, get_time());
+    }
+
+    pub async fn render(&mut self, world: &World, textures: &BTreeMap<TextureKey, Vec<Texture2D>>, settings: &Settings) {
         let pos = world.actor_pos(self.collider);
 
         draw_texture_ex(
-            &textures.get(&TextureKey::Player).unwrap().get(self.state as usize).unwrap(), pos.x, pos.y, WHITE,
+            &textures.get(&TextureKey::Player).unwrap().get(self.state as usize).unwrap(), pos.x, pos.y, self.color,
             DrawTextureParams {
                 dest_size: Some(vec2(self.width, self.height)),
                 ..Default::default()
             },
         );
+
+        // Draw Health bar
+        let height = 32.0 * settings.gui_scale;
+        let camera_collider_pos = world.actor_pos(self.camera_collider[0]);
+        draw_rectangle(camera_collider_pos.x, 0.0, self.health as f32 / 4.0, height, RED);
     }
 }

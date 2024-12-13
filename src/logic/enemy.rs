@@ -15,6 +15,8 @@ pub struct Enemy {
     pub texture_key: TextureKey,
     pub pos: Vec2,
     pub start_pos: Vec2,
+    /// The value of damage the player receives if the enemy does damage
+    pub damage: i16,
     pub colliders: Matrix<Collider>,
     pub world_collider: Actor,
     pub state: EnemyState,
@@ -45,7 +47,7 @@ pub enum EnemyBehavior {
 }
 
 impl Enemy {
-    pub async fn new(pos: Vec2, world: &mut World, size: Vec2, texture_key: TextureKey) -> Self {
+    pub async fn new(pos: Vec2, damage: i16, world: &mut World, size: Vec2, texture_key: TextureKey) -> Self {
         let width = size.x;
         let height = size.y;
 
@@ -72,6 +74,7 @@ impl Enemy {
             texture_key,
             pos: pos + vec2(1.0, 0.0),
             start_pos: pos,
+            damage,
             colliders,
             world_collider: world.add_actor(pos, width as i32, height as i32),
             state: EnemyState::Idling,

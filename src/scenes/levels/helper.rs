@@ -11,7 +11,7 @@ pub async fn render_level(level_scene_data: &mut LevelSceneData, textures: &BTre
     let enemies = &level_scene_data.enemies;
 
     // Render Player
-    level_scene_data.player.unwrap().render(&world, textures).await;
+    level_scene_data.player.as_mut().unwrap().render(&world, textures, settings).await;
 
     // Render Platforms
     for platform in platforms {
