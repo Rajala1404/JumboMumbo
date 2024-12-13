@@ -9,7 +9,7 @@ use macroquad::time::get_time;
 use macroquad::window::screen_width;
 use macroquad_platformer::{Actor, World};
 use crate::logic::collider::Collider;
-use crate::logic::enemy::Enemy;
+use crate::scenes::levels::structs::{LevelData, Trigger};
 use crate::utils::structs::Settings;
 use crate::utils::enums::TextureKey;
 // This file contains everything that is for the player
@@ -60,7 +60,7 @@ impl Player {
     }
 
     /// This function handles everything regarding the controls of the player (including moving)
-    pub async fn control(&mut self, world: &mut World, enemies: &Vec<Enemy>, settings: &Settings) {
+    pub async fn control(&mut self, world: &mut World, level_data: &mut LevelData, settings: &Settings) {
         // gets the current position of the player from the world
         let pos = world.actor_pos(self.collider);
         // Checks if the player is on another collider by checking if one collider is 1px beyond him
@@ -105,7 +105,7 @@ impl Player {
         }
 
         self.perform_move(world).await;
-        self.tick(enemies).await;
+        self.tick(level_data).await;
 
         let pos = world.actor_pos(self.collider);
 
@@ -140,7 +140,8 @@ impl Player {
         }
     }
 
-    pub async fn tick(&mut self, enemies: &Vec<Enemy>) {
+    pub async fn tick(&mut self, level_data: &mut LevelData) {
+        let enemies = &level_data.enemies;
         let colliding_enemies = self.collider_new.collide_check_enemy(enemies, vec2(0.0, 0.0)).await;
         if !colliding_enemies.is_empty() {
             for enemy in colliding_enemies {
@@ -156,6 +157,10 @@ impl Player {
                 self.triggers_exec.remove(&PlayerTrigger::Damage);
                 self.color = WHITE;
             }
+        }
+
+        if self.health == 0 {
+            level_data.triggers.insert(Trigger::GameOver, true);
         }
     }
 

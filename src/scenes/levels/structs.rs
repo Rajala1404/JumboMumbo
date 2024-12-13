@@ -20,6 +20,8 @@ pub enum Trigger {
     ShowCameraColliders,
     ShowColliders,
     ShowFPS,
+
+    GameOver,
 }
 
 #[derive(Clone)]

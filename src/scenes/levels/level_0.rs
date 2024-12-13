@@ -26,11 +26,15 @@ pub async fn level_0(scene: &mut Scene, mut textures: &mut BTreeMap<SceneTexture
         *level_scene_data = layout(settings).await;
     }
 
+    let mut level_data = level_scene_data.level_data.clone(); // Temporary level data
     let mut world = &mut level_scene_data.world;
-    let player = level_scene_data.level_data.player.as_mut().unwrap();
-    let enemies = &level_scene_data.level_data.enemies;
+    let mut player = level_data.player.clone().unwrap();
 
-    player.control(&mut world, enemies, settings).await;
+    player.control(&mut world, &mut level_data, settings).await;
+
+    level_data.player = Some(player);
+    level_scene_data.level_data = level_data;
+
 
     if is_key_down(KeyCode::Escape) {
         *scene = Scene::LevelSelector(0);
@@ -48,12 +52,9 @@ pub async fn level_0(scene: &mut Scene, mut textures: &mut BTreeMap<SceneTexture
 
 async fn layout(settings: &Settings) -> LevelSceneData {
     let mut world = World::new();
-    let x = screen_width() / 2.0;
-    let y = screen_height() / 2.0;
     let width = 128.0 * settings.gui_scale;
     let height = 128.0 * settings.gui_scale;
     let size = vec2(width, height);
-    let pos = vec2(x, y);
     let nv2 = vec2(0.0, 0.0);
 
     let mut platforms = vec![];
@@ -73,7 +74,7 @@ async fn layout(settings: &Settings) -> LevelSceneData {
         );
     }
     { // Base Platform 1
-        let pos = vec2(-screen_width() / 2.0, screen_height() - size.y);
+        let pos = vec2(size.x * -20.0, screen_height() - size.y);
 
         let mut tiles = vec![
             PlatformTile {
@@ -109,7 +110,7 @@ async fn layout(settings: &Settings) -> LevelSceneData {
         4,
         size,
         TextureKey::Platform0,
-        vec2(size.x * 5.0, screen_height() - size.y * 3.0 - size.y / 4.0),
+        vec2(size.x * 5.0, screen_height() - (size.y * 3.0 + size.y / 4.0)),
         &mut world
     ).await);
 
@@ -117,7 +118,7 @@ async fn layout(settings: &Settings) -> LevelSceneData {
         3,
         size,
         TextureKey::Platform0,
-        vec2(size.x * 12.0, screen_height() - size.y * 5.0 - size.y / 4.0),
+        vec2(size.x * 12.0, screen_height() - (size.y * 5.0 + size.y / 4.0)),
         &mut world
     ).await);
 
@@ -146,8 +147,16 @@ async fn layout(settings: &Settings) -> LevelSceneData {
         ).await);
     }
 
+    let pos = vec2(400.0 * settings.gui_scale, 0.0);
     LevelSceneData {
-        level_data: LevelData { level: Some(Level::Level0), player: Some(Player::new(width, height, vec2(pos.x, nv2.y), 0, &mut world).await), platforms, collectibles, enemies, triggers: BTreeMap::new(), trigger_locks: BTreeMap::new() },
+        level_data: LevelData {
+            level: Some(Level::Level0),
+            player: Some(Player::new(size.x, size.y, vec2(pos.x, nv2.y), 0, &mut world).await),
+            platforms,
+            collectibles,
+            enemies,
+            triggers: BTreeMap::new(),
+            trigger_locks: BTreeMap::new() },
         world
     }
 }
