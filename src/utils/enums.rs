@@ -15,8 +15,11 @@ pub enum TextureKey {
     Platform0,
 
     // Collectibles
-    /// This texture needs to be animated
+    /// This texture needs to be animated ([AnimationType::Cycle])
     Coin0,
+
+    /// This texture needs to be animated ([AnimationType::Cycle])
+    PowerUps0,
 }
 
 pub enum Scene {
@@ -45,13 +48,13 @@ impl Animation {
     /// For more information about what to do please refer to the documentation of the chosen animation
     pub async fn animate(&mut self) {
         match self.animation_type {
-            AnimationType::Cycle(start, end) => {
+            AnimationType::Cycle(start, end, speed) => {
                 // Set index to start (if not already done)
                 if self.index == -1 {
                     self.index = start as i32 - 1
                 }
 
-                if self.last_time < get_time() - 0.1 {
+                if self.last_time < get_time() - speed {
 
                     // Reset index if above max
                     if self.index < end as i32 {
@@ -77,8 +80,8 @@ pub enum AnimationType {
     /// Goes through a fixed number of textures <br>
     /// For this animation the index represents the current texture index. <br>
     /// **This animation needs to be rendered manually** <br>
-    /// The first [u32] represents the start and the last the end
-    Cycle(u32, u32)
+    /// The first [u32] represents the start, the second the end and the last the speed
+    Cycle(u32, u32, f64)
 }
 
 #[derive(Copy, Clone, PartialEq, Ord, Eq, PartialOrd, Debug)]

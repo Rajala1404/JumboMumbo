@@ -22,26 +22,43 @@ pub async fn render_level(level_scene_data: &mut LevelSceneData, textures: &BTre
             let collectibles = &mut level_scene_data.level_data.collectibles;
             let enemies = &level_scene_data.level_data.enemies;
             let projectiles = &level_scene_data.level_data.projectiles;
-
-            // Render Platforms
-            for platform in platforms {
-                platform.render(textures, world).await;
-            }
+            let power_ups = &mut level_scene_data.level_data.power_ups;
 
             // Render collectibles
             for collectible in collectibles {
                 collectible.render(textures).await;
             }
 
-            // Render enemies
-            for enemy in enemies {
-                enemy.render(textures).await;
+            let platforms = async {
+                // Render Platforms
+                for platform in platforms {
+                    platform.render(textures, world).await;
+                }
+            };
+
+            let enemies = async {
+                // Render enemies
+                for enemy in enemies {
+                    enemy.render(textures).await;
+                }
+            };
+
+            let projectiles = async {
+                // Render projectiles
+                for projectile in projectiles {
+                    projectile.render(textures).await;
+                }
+            };
+
+            // Render power ups
+            for power_up in power_ups {
+                power_up.render(textures).await;
             }
 
-            // Render projectiles
-            for projectile in projectiles {
-                projectile.render(textures).await;
-            }
+            platforms.await;
+            enemies.await;
+            projectiles.await;
+
 
             // Render Player
             level_scene_data.level_data.player.as_mut().unwrap().render(&world, textures, settings).await;
@@ -105,6 +122,22 @@ pub async fn tick_level(level_scene_data: &mut LevelSceneData, settings: &Settin
             if projectile < level_scene_data.level_data.projectiles.len() {
                 level_scene_data.level_data.projectiles.remove(projectile);
             }
+        }
+    }
+    { // Tick power ups
+        let player = level_scene_data.level_data.player.as_mut().unwrap();
+
+        let mut power_ups_to_remove = Vec::new();
+
+        for (i, power_up) in level_scene_data.level_data.power_ups.iter_mut().enumerate() {
+            power_up.tick(player).await;
+            if power_up.collected {
+                power_ups_to_remove.push(i);
+            }
+        }
+
+        for power_up in power_ups_to_remove {
+            level_scene_data.level_data.power_ups.remove(power_up);
         }
     }
 }

@@ -11,10 +11,73 @@ use macroquad_platformer::{Actor, World};
 use crate::logic::collider::Collider;
 use crate::scenes::levels::structs::{LevelData, Projectile, ProjectileOrigin, Trigger};
 use crate::utils::structs::Settings;
-use crate::utils::enums::{Direction, TextureKey};
+use crate::utils::enums::{Animation, AnimationType, Direction, TextureKey};
 use crate::utils::mathemann::point_to_point_direction_with_speed;
 
 // This file contains everything that is for the player
+#[derive(PartialEq, Clone, Debug)]
+pub struct PowerUp {
+    pub collected: bool,
+    pub power_up: PlayerPowerUp,
+    /// Stores the duration of the [PowerUp]
+    pub duration: f64,
+    pub collider: Collider,
+    pub texture_key: TextureKey,
+    pub animation: Animation,
+    pub size: Vec2,
+    pub speed: Vec2,
+}
+
+impl PowerUp {
+    pub async fn new(power_up: PlayerPowerUp, duration: f64, pos: Vec2, size: Vec2, texture_key: TextureKey, texture_range: (u32, u32), texture_speed: f64) -> Self {
+        let collected = false;
+        let collider = Collider::new_collectible(pos, size.x, size.y, vec2(0.0, 0.0)).await;
+        let animation = Animation::new(AnimationType::Cycle(texture_range.0, texture_range.1, texture_speed));
+        let speed = vec2(0.0, 0.0);
+
+        Self {
+            collected,
+            power_up,
+            duration,
+            collider,
+            texture_key,
+            animation,
+            size,
+            speed,
+        }
+    }
+
+    /// Runs all checks that may be needed on an [PowerUp]
+    pub async fn tick(&mut self, player: &mut Player) {
+        // Check if the collectible collides with another thing
+        if self.collider.touching_player(player).await {
+            self.collected = true;
+            player.power_ups.insert(self.power_up.clone(), self.duration);
+            player.power_ups_exec.insert(self.power_up.clone(), get_time());
+        }
+    }
+
+    pub async fn render(&mut self, textures: &BTreeMap<TextureKey, Vec<Texture2D>>) {
+        let pos = self.collider.pos().await;
+
+        match self.animation.animation_type {
+            AnimationType::Cycle(_, _, _) => {
+                self.animation.animate().await;
+                let texture = textures.get(&self.texture_key).unwrap().get(self.animation.index as usize).unwrap();
+                draw_texture_ex(
+                    texture,
+                    pos.x,
+                    pos.y,
+                    WHITE,
+                    DrawTextureParams {
+                        dest_size: Some(self.size),
+                        ..Default::default()
+                    },
+                );
+            }
+        }
+    }
+}
 
 #[derive(PartialEq, Clone)]
 pub struct Player {
@@ -33,6 +96,10 @@ pub struct Player {
     pub triggers: BTreeMap<PlayerTrigger, bool>,
     /// Contains the last time a trigger was executed
     pub triggers_exec: BTreeMap<PlayerTrigger, f64>,
+    /// All power ups and its duration
+    pub power_ups: BTreeMap<PlayerPowerUp, f64>,
+    /// Contains the time the power up was there
+    pub power_ups_exec: BTreeMap<PlayerPowerUp, f64>,
 }
 
 #[derive(PartialEq, Eq, Clone, Ord, PartialOrd, Copy)]
@@ -40,6 +107,14 @@ pub enum PlayerTrigger {
     DamageOverlay,
     DamageCooldown,
     ShootTimeout
+}
+
+#[derive(PartialEq, Eq, Clone, Ord, PartialOrd, Copy, Debug)]
+pub enum PlayerPowerUp {
+    JumpBoost,
+    SpeedBoost,
+    Coins2x,
+    Damage2x,
 }
 
 impl Player {
@@ -65,6 +140,8 @@ impl Player {
             speed: vec2(0.0, 0.0),
             triggers: BTreeMap::new(),
             triggers_exec: BTreeMap::new(),
+            power_ups: BTreeMap::new(),
+            power_ups_exec: BTreeMap::new(),
         }
     }
 
@@ -92,14 +169,23 @@ impl Player {
         // 1 = Left, 2 = Right
         let mut direction = 0;
 
+
+        let movement_speed = {
+            if self.power_ups.contains_key(&PlayerPowerUp::SpeedBoost) {
+                2000.0 * settings.gui_scale
+            } else {
+                1300.0 * settings.gui_scale
+            }
+        };
+
         // Checks if key is currently pressed
         if is_key_down(KeyCode::D) || is_key_down(KeyCode::Right) {
             // If D or Right Arrow is pressed the Player will be moved to the right by increasing the speed on the x-axis
-            self.speed.x = 1300.0 * settings.gui_scale;
+            self.speed.x = movement_speed;
             self.state = 1;
             direction = 2;
         } else if is_key_down(KeyCode::A) || is_key_down(KeyCode::Left) {
-            self.speed.x = 1300.0 * -settings.gui_scale;
+            self.speed.x = -movement_speed;
             self.state = 0;
             direction = 1;
         } else {
@@ -109,7 +195,11 @@ impl Player {
 
         if is_key_down(KeyCode::Space) {
             if on_ground {
-                self.speed.y = 1900.0 * -settings.gui_scale;
+                if self.power_ups.contains_key(&PlayerPowerUp::JumpBoost) {
+                    self.speed.y = 2500.0 * -settings.gui_scale;
+                } else {
+                    self.speed.y = 1900.0 * -settings.gui_scale;
+                }
             }
         }
 
@@ -266,6 +356,14 @@ impl Player {
         } else if self.triggers_exec.get(&PlayerTrigger::ShootTimeout).unwrap_or(&0.0) + 0.05 < get_time() {
             self.triggers.remove(&PlayerTrigger::ShootTimeout);
             self.triggers_exec.remove(&PlayerTrigger::ShootTimeout);
+        }
+
+        for (power_up, duration) in self.power_ups.clone() {
+            let start_time = self.power_ups_exec.get(&power_up).unwrap_or(&0.0);
+            if start_time + duration < get_time()  {
+                self.power_ups.remove(&power_up);
+                self.power_ups_exec.remove(&power_up);
+            }
         }
     }
 

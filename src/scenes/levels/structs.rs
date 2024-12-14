@@ -8,7 +8,7 @@ use macroquad::color::WHITE;
 use macroquad::time::{get_frame_time, get_time};
 use crate::logic::collider::Collider;
 use crate::logic::enemy::Enemy;
-use crate::logic::player::Player;
+use crate::logic::player::{Player, PowerUp};
 use crate::utils::enums::{Animation, AnimationType, TextureKey};
 /// This enum defines all existing levels
 #[derive(Eq, PartialEq, Clone, Ord, PartialOrd, Debug)]
@@ -33,6 +33,7 @@ pub struct LevelData {
     pub collectibles: Vec<Collectible>,
     pub enemies: Vec<Enemy>,
     pub projectiles: Vec<Projectile>,
+    pub power_ups: Vec<PowerUp>,
     /// Saves temporary triggers / settings
     pub triggers: BTreeMap<Trigger, bool>,
     pub trigger_locks: BTreeMap<Trigger, bool>
@@ -53,6 +54,7 @@ impl LevelSceneData {
             collectibles: Vec::new(),
             enemies: Vec::new(),
             projectiles: Vec::new(),
+            power_ups: Vec::new(),
             triggers: BTreeMap::new(),
             trigger_locks: BTreeMap::new()
         };
@@ -175,7 +177,7 @@ impl Collectible {
         let pos = self.collider.pos().await;
 
         match self.animation.animation_type {
-            AnimationType::Cycle(_, _) => {
+            AnimationType::Cycle(_, _, _) => {
                 self.animation.animate().await;
                 let texture = textures.get(&self.texture_key).unwrap().get(self.animation.index as usize).unwrap();
                 draw_texture_ex(

@@ -6,7 +6,7 @@ use macroquad_platformer::World;
 use stopwatch2::Stopwatch;
 use crate::logic::collider::Collider;
 use crate::logic::enemy::Enemy;
-use crate::logic::player::Player;
+use crate::logic::player::{Player, PlayerPowerUp, PowerUp};
 use crate::scenes::levels::structs::{Collectible, Level, LevelData, LevelSceneData, Platform, PlatformTile};
 use crate::utils::debugger;
 use crate::utils::enums::{Animation, AnimationType, Scene, SceneTextureKey, TextureKey};
@@ -142,7 +142,7 @@ async fn layout(settings: &Settings) -> LevelSceneData {
             collected: false,
             collider: Collider::new_collectible(vec2(size.x * 13.5, screen_height() - size.y * 7.0), size.x, size.y, nv2).await,
             texture_key: TextureKey::Coin0,
-            animation: Animation::new(AnimationType::Cycle(0, 5)),
+            animation: Animation::new(AnimationType::Cycle(0, 5, 0.1)),
             size,
             speed: nv2
         });
@@ -161,6 +161,17 @@ async fn layout(settings: &Settings) -> LevelSceneData {
         ).await);
     }
 
+    let mut power_ups = Vec::new();
+    power_ups.push(PowerUp::new(
+        PlayerPowerUp::JumpBoost,
+        20.0,
+        vec2(size.x * 18.0, screen_height() - (size.y * 10.0)),
+        size,
+        TextureKey::PowerUps0,
+        (0, 17),
+        0.1
+    ).await);
+
     let pos = vec2(400.0 * settings.gui_scale, 0.0);
     LevelSceneData {
         level_data: LevelData {
@@ -170,6 +181,7 @@ async fn layout(settings: &Settings) -> LevelSceneData {
             collectibles,
             enemies,
             projectiles: Vec::new(),
+            power_ups,
             triggers: BTreeMap::new(),
             trigger_locks: BTreeMap::new() },
         world
@@ -212,6 +224,12 @@ async fn load_textures(textures: &mut BTreeMap<SceneTextureKey, BTreeMap<Texture
         load_textures_from_tile_map(path).await
     };
     result.insert(TextureKey::Coin0, coin_0);
+
+    let power_ups_0 = {
+        let path = get_texture_path(TextureKey::PowerUps0).await;
+        load_textures_from_tile_map(path).await
+    };
+    result.insert(TextureKey::PowerUps0, power_ups_0);
 
     // Insert result into the global texture map
     textures.insert(SceneTextureKey::Level0, result);

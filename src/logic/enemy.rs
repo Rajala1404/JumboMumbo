@@ -332,6 +332,7 @@ impl Enemy {
         world.collide_check(self.world_collider, self.pos + vec2(-1.0, 0.0)) || world.collide_check(self.world_collider, self.pos + vec2(1.0, 0.0))
     }
 
+    // TODO: Implement health bar
     pub async fn render(&self, textures: &BTreeMap<TextureKey, Vec<Texture2D>>) {
         let texture = textures.get(&self.texture_key).unwrap().get(0).unwrap();
         draw_texture_ex(
