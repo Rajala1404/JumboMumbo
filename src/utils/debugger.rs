@@ -71,11 +71,18 @@ pub async fn render(level_scene_data: &LevelSceneData, settings: &Settings) {
             }
         };
 
+        let power_ups = async {
+            for power_up in &level_scene_data.level_data.power_ups {
+                power_up.collider.debug_render(settings).await;
+            }
+        };
+
         level_scene_data.level_data.player.as_ref().unwrap().collider_new.debug_render(settings).await;
         collectibles.await;
         enemies.await;
         platforms.await;
         projectiles.await;
+        power_ups.await;
     }
 
     if is_active(Trigger::ShowFPS, triggers).await {
