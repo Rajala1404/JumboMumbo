@@ -19,6 +19,8 @@ pub enum TextureKey {
     Coin0,
 
     /// This texture needs to be animated ([AnimationType::Cycle])
+    /// `0, 17` is the jump boost texture
+    /// `18, 40` is the speed boost texture
     PowerUps0,
 }
 
@@ -67,7 +69,7 @@ impl Animation {
                 }
 
                 // Set index to start (if not already done)
-                if self.index == -1 {
+                if self.index == start as i32 - 1 {
                     self.index = start as i32
                 }
             }

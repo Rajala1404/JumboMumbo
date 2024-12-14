@@ -1,12 +1,12 @@
-def print_rectangles(x_step, max_x):
+def print_rectangles(x_step, max_x, y):
     x = 0.0
     while x <= max_x:
         print('    {')
         print('      "x": {:.1f},'.format(x))
-        print('      "y": 0.0,')
+        print('      "y": {:.1f},'.format(y))
         print('      "w": 16.0,')
         print('      "h": 16.0')
         print('    },')
         x += x_step
 
-print_rectangles(16.0, 272.0)
+print_rectangles(16.0, 352.0, 16.0)

@@ -5,6 +5,7 @@ use macroquad::input::{is_key_down, is_key_pressed, is_mouse_button_pressed, mou
 use macroquad::math::{vec2, Vec2};
 use macroquad::prelude::{draw_texture_ex, get_frame_time, screen_height, Camera2D, DrawTextureParams, Rect, Texture2D};
 use macroquad::shapes::draw_rectangle;
+use macroquad::text::{draw_text, measure_text};
 use macroquad::time::get_time;
 use macroquad::window::screen_width;
 use macroquad_platformer::{Actor, World};
@@ -15,6 +16,7 @@ use crate::utils::enums::{Animation, AnimationType, Direction, TextureKey};
 use crate::utils::mathemann::point_to_point_direction_with_speed;
 
 // This file contains everything that is for the player
+
 #[derive(PartialEq, Clone, Debug)]
 pub struct PowerUp {
     pub collected: bool,
@@ -52,7 +54,7 @@ impl PowerUp {
         // Check if the collectible collides with another thing
         if self.collider.touching_player(player).await {
             self.collected = true;
-            player.power_ups.insert(self.power_up.clone(), self.duration);
+            player.power_ups.insert(self.power_up.clone(), self.clone().into());
             player.power_ups_exec.insert(self.power_up.clone(), get_time());
         }
     }
@@ -79,6 +81,23 @@ impl PowerUp {
     }
 }
 
+#[derive(PartialEq, Clone, Debug)]
+pub struct CollectedPowerUp {
+    pub duration: f64,
+    pub texture_key: TextureKey,
+    pub animation: Animation,
+}
+
+impl From<PowerUp> for CollectedPowerUp {
+    fn from(value: PowerUp) -> Self {
+        Self {
+            duration: value.duration,
+            texture_key: value.texture_key,
+            animation: value.animation,
+        }
+    }
+}
+
 #[derive(PartialEq, Clone)]
 pub struct Player {
     pub health: i16,
@@ -97,7 +116,7 @@ pub struct Player {
     /// Contains the last time a trigger was executed
     pub triggers_exec: BTreeMap<PlayerTrigger, f64>,
     /// All power ups and its duration
-    pub power_ups: BTreeMap<PlayerPowerUp, f64>,
+    pub power_ups: BTreeMap<PlayerPowerUp, CollectedPowerUp>,
     /// Contains the time the power up was there
     pub power_ups_exec: BTreeMap<PlayerPowerUp, f64>,
 }
@@ -358,11 +377,11 @@ impl Player {
             self.triggers_exec.remove(&PlayerTrigger::ShootTimeout);
         }
 
-        for (power_up, duration) in self.power_ups.clone() {
-            let start_time = self.power_ups_exec.get(&power_up).unwrap_or(&0.0);
-            if start_time + duration < get_time()  {
-                self.power_ups.remove(&power_up);
-                self.power_ups_exec.remove(&power_up);
+        for (power_up_key, power_up) in self.power_ups.clone() {
+            let start_time = self.power_ups_exec.get(&power_up_key).unwrap_or(&0.0);
+            if start_time + power_up.duration < get_time()  {
+                self.power_ups.remove(&power_up_key);
+                self.power_ups_exec.remove(&power_up_key);
             }
         }
     }
@@ -407,5 +426,68 @@ impl Player {
         let camera_collider_pos = world.actor_pos(self.camera_collider[0]);
         let camera_collider_pos_2 = world.actor_pos(self.camera_collider[2]);
         draw_rectangle(camera_collider_pos.x, camera_collider_pos_2.y, (self.health as f32 / 2.0) * settings.gui_scale, height, RED);
+
+        // Draw power ups & remaining time
+        let power_up_pos = self.power_up_render_pos(settings, world).await;
+        for (power_up_key, (pos, texture_size, font_size, spacing)) in power_up_pos {
+            let power_up = self.power_ups.get_mut(&power_up_key).unwrap();
+            let duration = (power_up.duration - (get_time() - self.power_ups_exec.get(&power_up_key).unwrap_or(&0.0))).round();
+            let time = {
+                let mut result = (0, duration as i32);
+                while result.1 > 59 {
+                    result.0 += 1;
+                    result.1 -= 60;
+                }
+                result
+            };
+
+
+            match power_up.animation.animation_type {
+                AnimationType::Cycle(_, _, _) => {
+                    power_up.animation.animate().await;
+                    let texture = textures.get(&power_up.texture_key).unwrap().get(power_up.animation.index as usize).unwrap();
+                    draw_texture_ex(
+                        texture,
+                        pos.x,
+                        pos.y,
+                        WHITE,
+                        DrawTextureParams {
+                            dest_size: Some(texture_size),
+                            ..Default::default()
+                        },
+                    );
+                }
+            }
+
+            let text_pos = pos + vec2(spacing, 0.0);
+
+            draw_text(
+                format!("{:02}:{:02}", time.0, time.1).as_str(),
+                text_pos.x,
+                text_pos.y + texture_size.y,
+                font_size,
+                WHITE,
+            );
+        }
+    }
+
+    /// result.0 is the position
+    /// result.1 is the texture size
+    /// result.2 is the font size
+    /// result.3 is the spacing between texture and text
+    async fn power_up_render_pos(&mut self, settings: &Settings, world: &World) -> BTreeMap<PlayerPowerUp, (Vec2, Vec2, f32, f32)> {
+        let font_size = 64.0 * settings.gui_scale;
+        let text_size = measure_text("00:00", None, font_size as _, 1.0);
+        let cp_y = world.actor_pos(self.camera_collider[2]).y;
+        let mut current_y = cp_y;
+        let mut result = BTreeMap::new();
+        for (power_up, _) in self.power_ups.clone() {
+            let cp_x = world.actor_pos(self.camera_collider[0]).x;
+            let x = screen_width() + cp_x - (text_size.width + text_size.height);
+            result.insert(power_up, (vec2(x, current_y), vec2(text_size.height, text_size.height), font_size, text_size.height));
+            current_y += text_size.height + 16.0 * settings.gui_scale;
+        }
+
+        result
     }
 }

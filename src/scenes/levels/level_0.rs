@@ -59,9 +59,10 @@ async fn layout(settings: &Settings) -> LevelSceneData {
     let size = vec2(width, height);
     let nv2 = vec2(0.0, 0.0);
 
-    let mut platforms = vec![];
-    let mut collectibles = vec![];
-    let mut enemies = vec![];
+    let mut platforms = Vec::new();
+    let mut collectibles = Vec::new();
+    let mut enemies = Vec::new();
+    let mut power_ups = Vec::new();
 
     { // Base Platform 1
         let pos = vec2(size.x * -20.0, screen_height() - size.y);
@@ -120,6 +121,16 @@ async fn layout(settings: &Settings) -> LevelSceneData {
         &mut world
     ).await);
 
+    power_ups.push(PowerUp::new(
+        PlayerPowerUp::SpeedBoost,
+        20.0,
+        vec2(size.x * 7.0, screen_height() - (size.y * 5.0)),
+        size,
+        TextureKey::PowerUps0,
+        (18, 40),
+        0.1
+    ).await);
+
     platforms.push(Platform::floating(
         3,
         size,
@@ -134,6 +145,16 @@ async fn layout(settings: &Settings) -> LevelSceneData {
         TextureKey::Platform0,
         vec2(size.x * 18.0, screen_height() - (size.y * 8.0)),
         &mut world
+    ).await);
+
+    power_ups.push(PowerUp::new(
+        PlayerPowerUp::JumpBoost,
+        20.0,
+        vec2(size.x * 18.0, screen_height() - (size.y * 10.0)),
+        size,
+        TextureKey::PowerUps0,
+        (0, 17),
+        0.1
     ).await);
 
     { // Coin above Floating Platform
@@ -160,17 +181,6 @@ async fn layout(settings: &Settings) -> LevelSceneData {
             TextureKey::Player // Player for now
         ).await);
     }
-
-    let mut power_ups = Vec::new();
-    power_ups.push(PowerUp::new(
-        PlayerPowerUp::JumpBoost,
-        20.0,
-        vec2(size.x * 18.0, screen_height() - (size.y * 10.0)),
-        size,
-        TextureKey::PowerUps0,
-        (0, 17),
-        0.1
-    ).await);
 
     let pos = vec2(400.0 * settings.gui_scale, 0.0);
     LevelSceneData {
