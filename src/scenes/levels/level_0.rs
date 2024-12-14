@@ -48,8 +48,6 @@ pub async fn level_0(scene: &mut Scene, mut textures: &mut BTreeMap<SceneTexture
 
     debugger::check(&mut level_scene_data.level_data.triggers, &mut level_scene_data.level_data.trigger_locks).await;
     debugger::render(level_scene_data, settings).await;
-
-    if level_scene_data.level_data.projectiles.iter().count() > 3000 { panic!() }
 }
 
 async fn layout(settings: &Settings) -> LevelSceneData {
