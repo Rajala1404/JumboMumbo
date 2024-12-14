@@ -23,9 +23,6 @@ pub async fn render_level(level_scene_data: &mut LevelSceneData, textures: &BTre
             let enemies = &level_scene_data.level_data.enemies;
             let projectiles = &level_scene_data.level_data.projectiles;
 
-            // Render Player
-            level_scene_data.level_data.player.as_mut().unwrap().render(&world, textures, settings).await;
-
             // Render Platforms
             for platform in platforms {
                 platform.render(textures, world).await;
@@ -45,6 +42,9 @@ pub async fn render_level(level_scene_data: &mut LevelSceneData, textures: &BTre
             for projectile in projectiles {
                 projectile.render(textures).await;
             }
+
+            // Render Player
+            level_scene_data.level_data.player.as_mut().unwrap().render(&world, textures, settings).await;
         }
     }
 }

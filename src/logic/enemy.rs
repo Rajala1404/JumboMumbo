@@ -2,7 +2,7 @@ use macroquad::math::{vec2, Vec2};
 use macroquad_platformer::{Actor, World};
 use std::collections::BTreeMap;
 use macroquad::prelude::{draw_texture_ex, get_frame_time, DrawTextureParams, Texture2D};
-use macroquad::color::WHITE;
+use macroquad::color::{Color, RED, WHITE};
 use macroquad::time::get_time;
 use crate::logic::collider::Collider;
 use crate::logic::player::Player;
@@ -28,6 +28,7 @@ pub struct Enemy {
     pub waiters_exec: BTreeMap<EnemyWaiter, f64>,
     pub behavior: Vec<EnemyBehavior>,
     pub speed: Vec2,
+    pub color: Color
 }
 
 #[derive(PartialEq, Clone, Debug)]
@@ -91,6 +92,7 @@ impl Enemy {
             waiters: BTreeMap::new(),
             waiters_exec: BTreeMap::new(),
             speed: vec2(0.0, 0.0),
+            color: WHITE,
         }
     }
 
@@ -115,10 +117,21 @@ impl Enemy {
         }
         // SP End
 
+        // End Damage cooldown
         if *self.waiters.get(&EnemyWaiter::DamageCooldown).unwrap_or(&false) {
-            if self.waiters_exec.get(&EnemyWaiter::DamageCooldown).unwrap_or(&0.0) + 0.5 > get_time() { 
+            if self.waiters_exec.get(&EnemyWaiter::DamageCooldown).unwrap_or(&0.0) + 0.5 < get_time() {
                 self.waiters.remove(&EnemyWaiter::DamageCooldown);
                 self.waiters_exec.remove(&EnemyWaiter::DamageCooldown);
+            }
+        }
+
+        // End damage overlay
+        if *self.waiters.get(&EnemyWaiter::DamageOverlay).unwrap_or(&false) {
+            self.color = RED;
+            if self.waiters_exec.get(&EnemyWaiter::DamageOverlay).unwrap_or(&0.0) + 0.25 < get_time() {
+                self.color = WHITE;
+                self.waiters.remove(&EnemyWaiter::DamageOverlay);
+                self.waiters_exec.remove(&EnemyWaiter::DamageOverlay);
             }
         }
         
@@ -137,6 +150,11 @@ impl Enemy {
                             if self.health == 0 {
                                 self.deletable = true;
                             }
+
+                            self.waiters.insert(EnemyWaiter::DamageOverlay, true);
+                            self.waiters_exec.insert(EnemyWaiter::DamageOverlay, get_time());
+                            self.waiters.insert(EnemyWaiter::DamageCooldown, true);
+                            self.waiters_exec.insert(EnemyWaiter::DamageCooldown, get_time());
                         }
                     }
                 }
@@ -320,7 +338,7 @@ impl Enemy {
             texture,
             self.pos.x,
             self.pos.y,
-            WHITE,
+            self.color,
             DrawTextureParams {
                 dest_size: Some(self.size),
                 ..Default::default()

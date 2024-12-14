@@ -37,7 +37,8 @@ pub struct Player {
 
 #[derive(PartialEq, Eq, Clone, Ord, PartialOrd, Copy)]
 pub enum PlayerTrigger {
-    Damage,
+    DamageOverlay,
+    DamageCooldown,
     ShootTimeout
 }
 
@@ -191,11 +192,11 @@ impl Player {
             }
         }
 
-        if *self.triggers.get(&PlayerTrigger::Damage).unwrap_or(&false) {
+        if *self.triggers.get(&PlayerTrigger::DamageOverlay).unwrap_or(&false) {
             self.color = RED;
-            if self.triggers_exec.get(&PlayerTrigger::Damage).unwrap() + 0.5 < get_time() {
-                self.triggers.remove(&PlayerTrigger::Damage);
-                self.triggers_exec.remove(&PlayerTrigger::Damage);
+            if self.triggers_exec.get(&PlayerTrigger::DamageOverlay).unwrap() + 0.25 < get_time() {
+                self.triggers.remove(&PlayerTrigger::DamageOverlay);
+                self.triggers_exec.remove(&PlayerTrigger::DamageOverlay);
                 self.color = WHITE;
             }
         }
@@ -219,7 +220,7 @@ impl Player {
                 let projectile  = Projectile::new(
                     pos,
                     size,
-                    -25,
+                    -100,
                     4.0,
                     TextureKey::Coin0, ProjectileOrigin::Player, movement_vector).await;
 
@@ -236,7 +237,7 @@ impl Player {
                 let projectile  = Projectile::new(
                     pos,
                     size,
-                    -25,
+                    -100,
                     4.0,
                     TextureKey::Coin0, ProjectileOrigin::Player, movement_vector).await;
 
@@ -253,7 +254,7 @@ impl Player {
                 let projectile  = Projectile::new(
                     pos,
                     size,
-                    -25,
+                    -100,
                     4.0,
                     TextureKey::Coin0, ProjectileOrigin::Player, movement_vector).await;
 
@@ -279,10 +280,17 @@ impl Player {
     }
 
     pub async fn damage(&mut self, health: i16) {
-        self.health += health;
-        if self.health < 0 { self.health = 0; }
-        self.triggers.insert(PlayerTrigger::Damage, true);
-        self.triggers_exec.insert(PlayerTrigger::Damage, get_time());
+        if !self.triggers.get(&PlayerTrigger::DamageCooldown).unwrap_or(&false) {
+            self.health += health;
+            if self.health < 0 { self.health = 0; }
+            self.triggers.insert(PlayerTrigger::DamageOverlay, true);
+            self.triggers_exec.insert(PlayerTrigger::DamageOverlay, get_time());
+            self.triggers.insert(PlayerTrigger::DamageCooldown, true);
+            self.triggers_exec.insert(PlayerTrigger::DamageCooldown, get_time());
+        } else if self.triggers_exec.get(&PlayerTrigger::DamageCooldown).unwrap_or(&0.0) + 0.5 < get_time() {
+            self.triggers.remove(&PlayerTrigger::DamageCooldown);
+            self.triggers_exec.remove(&PlayerTrigger::DamageCooldown);
+        }
     }
 
     pub async fn render(&mut self, world: &World, textures: &BTreeMap<TextureKey, Vec<Texture2D>>, settings: &Settings) {

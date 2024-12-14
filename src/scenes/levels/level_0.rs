@@ -63,19 +63,6 @@ async fn layout(settings: &Settings) -> LevelSceneData {
     let mut collectibles = vec![];
     let mut enemies = vec![];
 
-    { // Base Platform (Collider)
-        let pos = vec2(0.0 - screen_width(), screen_height());
-
-        platforms.push(
-            Platform {
-                collider: world.add_solid(pos, screen_width() as i32 * 3, (screen_height() / 32.0) as i32 ),
-                collider_new: Collider::new_solid(pos,screen_width() * 3.0, screen_height() / 32.0, vec2(0.0, 0.0)).await,
-                tile_size: size,
-                tiles: vec![],
-                speed: nv2
-            }
-        );
-    }
     { // Base Platform 1
         let pos = vec2(size.x * -20.0, screen_height() - size.y);
 
@@ -85,6 +72,11 @@ async fn layout(settings: &Settings) -> LevelSceneData {
                 texture_index: 0,
                 pos: vec2(0.0, 0.0),
             },
+            PlatformTile {
+                texture_key: TextureKey::Platform0,
+                texture_index: 3,
+                pos: vec2(0.0, 1.0),
+            }
         ];
 
         for i in 1..40 {
@@ -92,6 +84,11 @@ async fn layout(settings: &Settings) -> LevelSceneData {
                 texture_key: TextureKey::Platform0,
                 texture_index: 1,
                 pos: vec2(i as f32, 0.0),
+            });
+            tiles.push(PlatformTile{
+                texture_key: TextureKey::Platform0,
+                texture_index: 4,
+                pos: vec2(i as f32, 1.0),
             })
         }
 
@@ -99,6 +96,11 @@ async fn layout(settings: &Settings) -> LevelSceneData {
             texture_key: TextureKey::Platform0,
             texture_index: 2,
             pos: vec2(40.0, 0.0),
+        });
+        tiles.push(PlatformTile {
+            texture_key: TextureKey::Platform0,
+            texture_index: 5,
+            pos: vec2(40.0, 1.0),
         });
 
         platforms.push(Platform{
@@ -152,7 +154,7 @@ async fn layout(settings: &Settings) -> LevelSceneData {
         let height = size.y;
         enemies.push(Enemy::new(
             pos,
-            -10,
+            -50,
             &mut world,
             vec2(height, height),
             TextureKey::Player // Player for now
