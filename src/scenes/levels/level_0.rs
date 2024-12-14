@@ -126,6 +126,14 @@ async fn layout(settings: &Settings) -> LevelSceneData {
         &mut world
     ).await);
 
+    platforms.push(Platform::floating(
+        3,
+        size,
+        TextureKey::Platform0,
+        vec2(size.x * 18.0, screen_height() - (size.y * 8.0)),
+        &mut world
+    ).await);
+
     { // Coin above Floating Platform
         let size = vec2(size.x, size.y);
         collectibles.push(Collectible {

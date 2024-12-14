@@ -147,7 +147,7 @@ impl Player {
                         if trigger {
                             world.set_actor_position(collider, vec2(pos.x, pos.y + player.height));
                         } else {
-                            world.set_actor_position(collider, vec2(pos.x, pos.y + player.width))
+                            world.set_actor_position(collider, vec2(pos.x, (pos.y + screen_height() / 8.0) + screen_height() - screen_height() / 2.0 + screen_height() / 8.0));
                         }
                     }
                 }
@@ -169,7 +169,7 @@ impl Player {
 
             if pos.y -1.0 <= world.actor_pos(self.camera_collider[2]).y + screen_height() / 8.0 && !(pos.y + self.height + 1.0 >= world.actor_pos(self.camera_collider[3]).y) {
                 let x = world.actor_pos(self.camera_collider[0]);
-                set_camera(&Camera2D::from_display_rect(Rect::new(x.x, pos.y - screen_height() / 8.0 + screen_height() / 2.0, screen_width(), -screen_height())));
+                set_camera(&Camera2D::from_display_rect(Rect::new(x.x, pos.y - screen_height() / 8.0 + screen_height(), screen_width(), -screen_height())));
                 move_camera_collider(self.camera_collider[2], world, Direction::Up, true, &pos, self);
                 move_camera_collider(self.camera_collider[3], world, Direction::Down, false, &pos, self);
             } else if pos.y + self.height + 1.0 >= world.actor_pos(self.camera_collider[3]).y && !(pos.y -1.0 <= world.actor_pos(self.camera_collider[2]).y + screen_height() / 8.0) {

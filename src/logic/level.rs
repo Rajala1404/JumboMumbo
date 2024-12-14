@@ -70,8 +70,18 @@ pub async fn tick_level(level_scene_data: &mut LevelSceneData, settings: &Settin
         let world = &mut level_scene_data.world;
         let player = &mut level_scene_data.level_data.player.as_mut().unwrap();
 
-        for enemy in enemies {
+        let mut enemies_to_remove = Vec::new();
+
+        for (i, enemy) in enemies.iter_mut().enumerate() {
+            if enemy.deletable {
+                enemies_to_remove.push(i);
+                continue;
+            }
             enemy.tick(world, player, projectiles, settings).await;
+        }
+
+        for enemy in enemies_to_remove {
+            enemies.remove(enemy);
         }
     }
     { // Tick projectiles

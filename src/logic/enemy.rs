@@ -2,7 +2,8 @@ use macroquad::math::{vec2, Vec2};
 use macroquad_platformer::{Actor, World};
 use std::collections::BTreeMap;
 use macroquad::prelude::{draw_texture_ex, get_frame_time, DrawTextureParams, Texture2D};
-use macroquad::color::{WHITE};
+use macroquad::color::WHITE;
+use macroquad::time::get_time;
 use crate::logic::collider::Collider;
 use crate::logic::player::Player;
 use crate::scenes::levels::structs::{Projectile, ProjectileOrigin};
@@ -13,6 +14,7 @@ use crate::utils::structs::{Matrix, Settings};
 #[derive(PartialEq, Clone, Debug)]
 pub struct Enemy {
     pub size: Vec2,
+    pub deletable: bool,
     pub health: i16,
     pub texture_key: TextureKey,
     pub pos: Vec2,
@@ -23,6 +25,7 @@ pub struct Enemy {
     pub world_collider: Actor,
     pub state: EnemyState,
     pub waiters: BTreeMap<EnemyWaiter, bool>,
+    pub waiters_exec: BTreeMap<EnemyWaiter, f64>,
     pub behavior: Vec<EnemyBehavior>,
     pub speed: Vec2,
 }
@@ -40,7 +43,9 @@ pub enum EnemyWaiter {
     /// `true` = Right
     /// `false`= Left
     IdlingDirection,
-    Jumping
+    Jumping,
+    DamageCooldown,
+    DamageOverlay,
 }
 
 #[derive(PartialEq, Clone, Ord, Eq, PartialOrd, Debug)]
@@ -74,6 +79,7 @@ impl Enemy {
         Self {
             size,
             health: 1000,
+            deletable: false,
             texture_key,
             pos: pos + vec2(1.0, 0.0),
             start_pos: pos,
@@ -83,6 +89,7 @@ impl Enemy {
             state: EnemyState::Idling,
             behavior: Vec::new(),
             waiters: BTreeMap::new(),
+            waiters_exec: BTreeMap::new(),
             speed: vec2(0.0, 0.0),
         }
     }
@@ -97,7 +104,7 @@ impl Enemy {
         let sealing_hit = world.collide_check(self.world_collider, pos + vec2(0.0, -1.0));
 
         if sealing_hit {
-            self.speed.y = (100.0 * settings.gui_scale) * get_frame_time(); // I have no idea why but if this doesn't get multiplied by the frame time its inconsistent on different Frame Rates
+            self.speed.y = (100.0 * settings.gui_scale) * get_frame_time(); // I have no idea why but if this doesn't get multiplied by the frame time it's inconsistent on different Frame Rates
         }
 
         if !on_ground {
@@ -108,15 +115,28 @@ impl Enemy {
         }
         // SP End
 
+        if *self.waiters.get(&EnemyWaiter::DamageCooldown).unwrap_or(&false) {
+            if self.waiters_exec.get(&EnemyWaiter::DamageCooldown).unwrap_or(&0.0) + 0.5 > get_time() { 
+                self.waiters.remove(&EnemyWaiter::DamageCooldown);
+                self.waiters_exec.remove(&EnemyWaiter::DamageCooldown);
+            }
+        }
+        
         let colliding_projectiles = self.colliders.get(0, 0).unwrap().collide_check_projectile(projectiles, vec2(0.0, 0.0)).await;
         if !colliding_projectiles.is_empty() {
             for projectile in colliding_projectiles {
                 let projectile = projectiles.get(projectile);
                 if projectile.is_some() {
                     if projectile.unwrap().origin == ProjectileOrigin::Player {
-                        self.health += projectile.unwrap().damage;
-                        if self.health < 0 {
-                            self.health = 0;
+                        if !self.waiters.get(&EnemyWaiter::DamageCooldown).unwrap_or(&false) {
+                            self.health += projectile.unwrap().damage;
+                            if self.health < 0 {
+                                self.health = 0;
+                            }
+
+                            if self.health == 0 {
+                                self.deletable = true;
+                            }
                         }
                     }
                 }
