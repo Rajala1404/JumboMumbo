@@ -1,7 +1,7 @@
 use std::collections::BTreeMap;
 use macroquad::camera::set_camera;
 use macroquad::color::{Color, RED, WHITE};
-use macroquad::input::{is_key_down, is_mouse_button_pressed, mouse_position, KeyCode, MouseButton};
+use macroquad::input::{is_key_down, is_key_pressed, is_mouse_button_pressed, mouse_position, KeyCode, MouseButton};
 use macroquad::math::{vec2, Vec2};
 use macroquad::prelude::{draw_texture_ex, get_frame_time, screen_height, Camera2D, DrawTextureParams, Rect, Texture2D};
 use macroquad::shapes::draw_rectangle;
@@ -11,8 +11,9 @@ use macroquad_platformer::{Actor, World};
 use crate::logic::collider::Collider;
 use crate::scenes::levels::structs::{LevelData, Projectile, ProjectileOrigin, Trigger};
 use crate::utils::structs::Settings;
-use crate::utils::enums::TextureKey;
+use crate::utils::enums::{Direction, TextureKey};
 use crate::utils::mathemann::point_to_point_direction_with_speed;
+
 // This file contains everything that is for the player
 
 #[derive(PartialEq, Clone)]
@@ -26,7 +27,7 @@ pub struct Player {
     pub state: i8,
     pub collider: Actor,
     pub collider_new: Collider,
-    pub camera_collider: [Actor; 2],
+    pub camera_collider: [Actor; 4],
     pub speed: Vec2,
     /// All triggers and if a Trigger is active or not
     pub triggers: BTreeMap<PlayerTrigger, bool>,
@@ -51,8 +52,14 @@ impl Player {
             collider: world.add_actor(pos, width as i32, height as i32),
             collider_new: Collider::new_actor(pos, width, height, vec2(0.0, 0.0)).await,
             camera_collider: [
+                // Left
                 world.add_actor(vec2(0.0, 0.0), (screen_width() / 4.0) as i32, screen_height() as i32),
+                // Right
                 world.add_actor(vec2(screen_width() - (screen_width() / 4.0), 0.0), (screen_width() / 4.0) as i32, screen_height() as i32),
+                // Up
+                world.add_actor(vec2(0.0, 0.0), screen_width() as i32, (screen_height() / 8.0) as i32),
+                // Down
+                world.add_actor(vec2(0.0,  screen_height() - screen_height() / 8.0), screen_width() as i32, (screen_height() / 8.0) as i32),
             ],
             speed: vec2(0.0, 0.0),
             triggers: BTreeMap::new(),
@@ -110,34 +117,67 @@ impl Player {
 
         let pos = world.actor_pos(self.collider);
 
-        fn move_camera_collider(collider: Actor, world: &mut World, left: bool, trigger: bool, pos: &Vec2, player: &Player) {
-            let y = pos.y + player.height - screen_height();
-            if left {
-                if trigger {
-                    world.set_actor_position(collider, vec2(pos.x - screen_width() / 4.0, y));
-                } else {
-                    world.set_actor_position(collider, vec2(pos.x + player.width + screen_width() / 4.0 - screen_width(), y));
-                }
-            } else {
-                if trigger {
-                    world.set_actor_position(collider, vec2(pos.x + player.width, y));
-                } else {
-                    world.set_actor_position(collider, vec2(pos.x + (screen_width() / 2.0), y));
+        { // Make camera follow player
+            fn move_camera_collider(collider: Actor, world: &mut World, direction: Direction, trigger: bool, pos: &Vec2, player: &Player) {
+                let y = pos.y + player.height - screen_height();
+
+                match direction {
+                    Direction::Right => {
+                        if trigger {
+                            world.set_actor_position(collider, vec2(pos.x + player.width, y));
+                        } else {
+                            world.set_actor_position(collider, vec2(pos.x + (screen_width() / 2.0), y));
+                        }
+                    }
+                    Direction::Left => {
+                        if trigger {
+                            world.set_actor_position(collider, vec2(pos.x - screen_width() / 4.0, y));
+                        } else {
+                            world.set_actor_position(collider, vec2(pos.x + player.width + screen_width() / 4.0 - screen_width(), y));
+                        }
+                    }
+                    Direction::Up => {
+                        if trigger {
+                            world.set_actor_position(collider, vec2(pos.x, pos.y - screen_height() / 8.0));
+                        } else {
+                            world.set_actor_position(collider, vec2(pos.x, pos.y + screen_height() / 8.0 + player.height - screen_height()));
+                        }
+                    }
+                    Direction::Down => {
+                        if trigger {
+                            world.set_actor_position(collider, vec2(pos.x, pos.y + player.height));
+                        } else {
+                            world.set_actor_position(collider, vec2(pos.x, pos.y + player.width))
+                        }
+                    }
                 }
             }
-        }
 
-        // Make camera follow player
-        if pos.x -1.0 <= world.actor_pos(self.camera_collider[0]).x + screen_width() / 4.0 && direction != 2 {
-            set_camera(&Camera2D::from_display_rect(Rect::new(pos.x - screen_width() / 4.0 , screen_height() , screen_width(), -screen_height())));
+            if pos.x - 1.0 <= world.actor_pos(self.camera_collider[0]).x + screen_width() / 4.0 && direction != 2 {
+                let y = world.actor_pos(self.camera_collider[2]);
+                set_camera(&Camera2D::from_display_rect(Rect::new(pos.x - screen_width() / 4.0, y.y + screen_height(), screen_width(), -screen_height())));
 
-            move_camera_collider(self.camera_collider[0], world, true, true, &pos, self);
-            move_camera_collider(self.camera_collider[1], world, false, false, &pos, self);
-        } else if pos.x + self.height + 1.0 >= world.actor_pos(self.camera_collider[1]).x && direction != 1 {
-            set_camera(&Camera2D::from_display_rect(Rect::new(pos.x + self.width - (screen_width() - screen_width() / 4.0) , screen_height() , screen_width(), -screen_height())));
+                move_camera_collider(self.camera_collider[0], world, Direction::Left, true, &pos, self);
+                move_camera_collider(self.camera_collider[1], world, Direction::Right, false, &pos, self);
+            } else if pos.x + self.height + 1.0 >= world.actor_pos(self.camera_collider[1]).x && direction != 1 {
+                let y = world.actor_pos(self.camera_collider[2]);
+                set_camera(&Camera2D::from_display_rect(Rect::new(pos.x + self.width - (screen_width() - screen_width() / 4.0), y.y + screen_height(), screen_width(), -screen_height())));
 
-            move_camera_collider(self.camera_collider[0], world, true, false, &pos, self);
-            move_camera_collider(self.camera_collider[1], world, false, true, &pos, self);
+                move_camera_collider(self.camera_collider[0], world, Direction::Left, false, &pos, self);
+                move_camera_collider(self.camera_collider[1], world, Direction::Right, true, &pos, self);
+            }
+
+            if pos.y -1.0 <= world.actor_pos(self.camera_collider[2]).y + screen_height() / 8.0 && !(pos.y + self.height + 1.0 >= world.actor_pos(self.camera_collider[3]).y) {
+                let x = world.actor_pos(self.camera_collider[0]);
+                set_camera(&Camera2D::from_display_rect(Rect::new(x.x, pos.y - screen_height() / 8.0 + screen_height() / 2.0, screen_width(), -screen_height())));
+                move_camera_collider(self.camera_collider[2], world, Direction::Up, true, &pos, self);
+                move_camera_collider(self.camera_collider[3], world, Direction::Down, false, &pos, self);
+            } else if pos.y + self.height + 1.0 >= world.actor_pos(self.camera_collider[3]).y && !(pos.y -1.0 <= world.actor_pos(self.camera_collider[2]).y + screen_height() / 8.0) {
+                let x = world.actor_pos(self.camera_collider[0]);
+                set_camera(&Camera2D::from_display_rect(Rect::new(x.x, ((pos.y + self.height + screen_height() / 8.0) - screen_height()) + screen_height(), screen_width(), -screen_height())));
+                move_camera_collider(self.camera_collider[2], world, Direction::Up, false, &pos, self);
+                move_camera_collider(self.camera_collider[3], world, Direction::Down, true, &pos, self);
+            }
         }
     }
 
@@ -166,28 +206,29 @@ impl Player {
 
         if !self.triggers.get(&PlayerTrigger::ShootTimeout).unwrap_or(&false) {
             if is_mouse_button_pressed(MouseButton::Left) {
-                let pos = world.actor_pos(self.collider) + vec2(self.width / 2.0, self.height / 2.0);
-                let pos_c = world.actor_pos(self.camera_collider[0]);
+                let size = vec2(32.0, 32.0) * settings.gui_scale;
+                let pos = world.actor_pos(self.collider) + vec2(self.width / 2.0, self.height / 2.0) - vec2(size.x / 2.0, size.y / 2.0);
+                let pos_c_x = world.actor_pos(self.camera_collider[0]);
+                let pos_c_y = world.actor_pos(self.camera_collider[3]);
                 let (mut mouse_x, mut mouse_y) = mouse_position();
-                mouse_x += pos_c.x;
-                mouse_y += pos_c.y;
+                mouse_x += pos_c_x.x;
+                mouse_y -= pos_c_y.normalize().y;
 
-                let movement_vector = {
-                    let (x, y) = point_to_point_direction_with_speed((pos.x, pos.y), (mouse_x, mouse_y), 1000.0).await;
-                    vec2(x, y)
-                };
+                let movement_vector = point_to_point_direction_with_speed(pos, vec2(mouse_x, mouse_y), 1000.0 * settings.gui_scale).await;
 
                 let projectile  = Projectile::new(
                     pos,
-                    vec2(32.0, 32.0) * settings.gui_scale,
+                    size,
                     -25,
                     4.0,
-                    TextureKey::Coin0, ProjectileOrigin::Player, -movement_vector).await;
+                    TextureKey::Coin0, ProjectileOrigin::Player, movement_vector).await;
 
                 self.triggers.insert(PlayerTrigger::ShootTimeout, true);
                 self.triggers_exec.insert(PlayerTrigger::ShootTimeout, get_time());
 
                 level_data.projectiles.push(projectile);
+            } else if is_key_pressed(KeyCode::Tab) {
+                let pos = world.actor_pos(self.collider) + vec2(self.width / 2.0, self.height / 2.0);
             }
         } else if self.triggers_exec.get(&PlayerTrigger::ShootTimeout).unwrap_or(&0.0) + 0.1 < get_time() {
             self.triggers.remove(&PlayerTrigger::ShootTimeout);
@@ -226,6 +267,7 @@ impl Player {
         // Draw Health bar
         let height = 32.0 * settings.gui_scale;
         let camera_collider_pos = world.actor_pos(self.camera_collider[0]);
-        draw_rectangle(camera_collider_pos.x, 0.0, self.health as f32 / 4.0, height, RED);
+        let camera_collider_pos_2 = world.actor_pos(self.camera_collider[2]);
+        draw_rectangle(camera_collider_pos.x, camera_collider_pos_2.y, (self.health as f32 / 2.0) * settings.gui_scale, height, RED);
     }
 }

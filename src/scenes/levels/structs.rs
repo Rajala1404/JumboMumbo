@@ -243,8 +243,7 @@ impl Projectile {
     }
 
     async fn perform_move(&mut self) {
-        let new_pos = self.pos + self.speed * get_frame_time();
-        self.pos = new_pos;
+        self.pos += self.speed * get_frame_time();
         self.collider.change_pos(self.pos).await;
     }
 
