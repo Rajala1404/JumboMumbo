@@ -227,10 +227,42 @@ impl Player {
                 self.triggers_exec.insert(PlayerTrigger::ShootTimeout, get_time());
 
                 level_data.projectiles.push(projectile);
-            } else if is_key_pressed(KeyCode::Tab) {
-                let pos = world.actor_pos(self.collider) + vec2(self.width / 2.0, self.height / 2.0);
+            } else if is_key_pressed(KeyCode::Q) {
+                let size = vec2(32.0, 32.0) * settings.gui_scale;
+                let pos = world.actor_pos(self.collider) + vec2(self.width / 2.0, self.height / 2.0)- vec2(size.x / 2.0, size.y / 2.0);
+
+                let movement_vector = vec2(-1.0, 0.0) * (1000.0 * settings.gui_scale);
+
+                let projectile  = Projectile::new(
+                    pos,
+                    size,
+                    -25,
+                    4.0,
+                    TextureKey::Coin0, ProjectileOrigin::Player, movement_vector).await;
+
+                self.triggers.insert(PlayerTrigger::ShootTimeout, true);
+                self.triggers_exec.insert(PlayerTrigger::ShootTimeout, get_time());
+
+                level_data.projectiles.push(projectile);
+            } else if is_key_pressed(KeyCode::E) {
+                let size = vec2(32.0, 32.0) * settings.gui_scale;
+                let pos = world.actor_pos(self.collider) + vec2(self.width / 2.0, self.height / 2.0)- vec2(size.x / 2.0, size.y / 2.0);
+
+                let movement_vector = vec2(1.0, 0.0) * (1000.0 * settings.gui_scale);
+
+                let projectile  = Projectile::new(
+                    pos,
+                    size,
+                    -25,
+                    4.0,
+                    TextureKey::Coin0, ProjectileOrigin::Player, movement_vector).await;
+
+                self.triggers.insert(PlayerTrigger::ShootTimeout, true);
+                self.triggers_exec.insert(PlayerTrigger::ShootTimeout, get_time());
+
+                level_data.projectiles.push(projectile);
             }
-        } else if self.triggers_exec.get(&PlayerTrigger::ShootTimeout).unwrap_or(&0.0) + 0.1 < get_time() {
+        } else if self.triggers_exec.get(&PlayerTrigger::ShootTimeout).unwrap_or(&0.0) + 0.05 < get_time() {
             self.triggers.remove(&PlayerTrigger::ShootTimeout);
             self.triggers_exec.remove(&PlayerTrigger::ShootTimeout);
         }
