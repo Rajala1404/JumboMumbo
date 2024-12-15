@@ -7,10 +7,9 @@ use macroquad::shapes::draw_rectangle;
 use macroquad::time::get_time;
 use crate::logic::collider::Collider;
 use crate::logic::player::Player;
-use crate::scenes::levels::structs::{Projectile, ProjectileOrigin};
 use crate::utils::enums::{Direction, TextureKey};
 use crate::utils::mathemann::{plus_minus_range, stretch_float_to};
-use crate::utils::structs::{Matrix, Settings};
+use crate::utils::structs::{Matrix, Projectile, ProjectileOrigin, Settings};
 
 #[derive(PartialEq, Clone, Debug)]
 pub struct Enemy {

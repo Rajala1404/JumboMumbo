@@ -14,7 +14,7 @@ use utils::enums::{Scene, SceneTextureKey, TextureKey};
 use crate::scenes::level_selector::level_selector;
 use crate::scenes::levels::levels::start_level;
 use crate::scenes::main_menu::main_menu;
-use scenes::levels::structs::LevelSceneData;
+use utils::structs::LevelSceneData;
 use utils::structs::{Settings, TempSettings};
 use crate::scenes::settings_menu::settings_menu;
 use crate::utils::structs::PersistentLevelData;

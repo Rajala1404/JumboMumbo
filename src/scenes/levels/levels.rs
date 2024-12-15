@@ -1,8 +1,7 @@
 use std::collections::BTreeMap;
 use macroquad::prelude::Texture2D;
-use crate::utils::structs::{PersistentLevelData, Settings};
+use crate::utils::structs::{Level, LevelSceneData, PersistentLevelData, Settings};
 use crate::scenes::levels::level_0::level_0;
-use crate::scenes::levels::structs::{Level, LevelSceneData};
 use crate::utils::enums::{Scene, SceneTextureKey, TextureKey};
 
 pub async fn start_level(scene: &mut Scene, textures: &mut BTreeMap<SceneTextureKey, BTreeMap<TextureKey, Vec<Texture2D>>>, level_scene_data: &mut LevelSceneData, persistent_level_data: &mut PersistentLevelData, settings: &Settings) {

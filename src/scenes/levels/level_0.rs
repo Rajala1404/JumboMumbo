@@ -7,10 +7,9 @@ use stopwatch2::Stopwatch;
 use crate::logic::collider::Collider;
 use crate::logic::enemy::Enemy;
 use crate::logic::player::{Player, PlayerPowerUp, PowerUp};
-use crate::scenes::levels::structs::{Collectible, CollectibleType, Level, LevelData, LevelSceneData, Platform, PlatformTile};
 use crate::utils::debugger;
 use crate::utils::enums::{Animation, AnimationType, Scene, SceneTextureKey, TextureKey};
-use crate::utils::structs::PersistentLevelData;
+use crate::utils::structs::{Collectible, CollectibleType, Level, LevelData, LevelSceneData, PersistentLevelData, Platform, PlatformTile};
 use crate::utils::texture::{get_texture_path, load_textures_from_tile_map};
 
 pub async fn level_0(scene: &mut Scene, mut textures: &mut BTreeMap<SceneTextureKey, BTreeMap<TextureKey, Vec<Texture2D>>>, level_scene_data: &mut LevelSceneData, persistent_level_data: &mut PersistentLevelData, settings: &Settings) {

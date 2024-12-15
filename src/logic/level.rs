@@ -3,8 +3,7 @@ use macroquad::camera::set_default_camera;
 use macroquad::color::{BLACK, WHITE};
 use macroquad::prelude::Texture2D;
 use macroquad::window::{clear_background, screen_height};
-use crate::scenes::levels::structs::{CollectibleType, LevelSceneData, Trigger};
-use crate::utils::structs::Settings;
+use crate::utils::structs::{CollectibleType, LevelSceneData, Settings, Trigger};
 use crate::utils::enums::TextureKey;
 use crate::utils::text::{draw_text_center, draw_text_centered};
 

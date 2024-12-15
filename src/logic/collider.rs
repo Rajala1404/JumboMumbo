@@ -4,8 +4,7 @@ use macroquad::prelude::vec2;
 use macroquad::shapes::draw_rectangle_lines;
 use crate::logic::player::Player;
 use crate::logic::enemy::Enemy;
-use crate::scenes::levels::structs::{Platform, Projectile};
-use crate::utils::structs::Settings;
+use crate::utils::structs::{Platform, Projectile, Settings};
 use crate::utils::structs::Rect;
 
 #[derive(PartialEq, Copy, Clone, Debug)]

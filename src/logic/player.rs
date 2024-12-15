@@ -10,8 +10,7 @@ use macroquad::time::get_time;
 use macroquad::window::screen_width;
 use macroquad_platformer::{Actor, World};
 use crate::logic::collider::Collider;
-use crate::scenes::levels::structs::{LevelData, Projectile, ProjectileOrigin, Trigger};
-use crate::utils::structs::Settings;
+use crate::utils::structs::{LevelData, Projectile, ProjectileOrigin, Settings, Trigger};
 use crate::utils::enums::{Animation, AnimationType, Direction, TextureKey};
 use crate::utils::mathemann::point_to_point_direction_with_speed;
 

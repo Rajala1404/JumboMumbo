@@ -1,5 +1,5 @@
 use macroquad::time::get_time;
-use crate::scenes::levels::structs;
+use crate::utils;
 
 #[derive(Ord, PartialOrd, Eq, PartialEq, Copy, Clone)]
 pub enum SceneTextureKey {
@@ -35,7 +35,7 @@ pub enum Scene {
     SettingsMenu,
     /// The i32 is the Page
     LevelSelector(i32),
-    Level(structs::Level)
+    Level(utils::structs::Level)
 }
 
 #[derive(Copy, Clone, PartialEq, Debug)]
