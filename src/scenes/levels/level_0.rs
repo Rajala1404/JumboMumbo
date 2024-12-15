@@ -126,7 +126,7 @@ async fn layout(settings: &Settings) -> LevelSceneData {
 
     power_ups.push(PowerUp::new(
         PlayerPowerUp::SpeedBoost,
-        20.0,
+        120.0,
         vec2(size.x * 7.0, screen_height() - (size.y * 5.0)),
         size,
         TextureKey::PowerUps0,
@@ -209,6 +209,17 @@ async fn layout(settings: &Settings) -> LevelSceneData {
             TextureKey::PowerUps0,
             (41, 63),
             0.1
+        ).await);
+
+        // Powerup in the Air above Platform
+        power_ups.push(PowerUp::new(
+            PlayerPowerUp::Damage2x,
+            20.0,
+            pos + vec2(width * -8.0, height * -8.0),
+            size,
+            TextureKey::PowerUps0,
+            (64, 84),
+            0.1
         ).await)
     }
 
@@ -222,7 +233,7 @@ async fn layout(settings: &Settings) -> LevelSceneData {
 
     power_ups.push(PowerUp::new(
         PlayerPowerUp::JumpBoost,
-        20.0,
+        120.0,
         vec2(size.x * 18.0, screen_height() - (size.y * 10.0)),
         size,
         TextureKey::PowerUps0,

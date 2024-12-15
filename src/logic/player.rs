@@ -340,6 +340,10 @@ impl Player {
         }
 
         if !self.triggers.get(&PlayerTrigger::ShootTimeout).unwrap_or(&false) {
+            let damage = match self.power_ups.contains_key(&PlayerPowerUp::Damage2x) {
+                true => -250,
+                false => -100,
+            };
             if is_mouse_button_pressed(MouseButton::Left) {
                 let size = vec2(32.0, 32.0) * settings.gui_scale;
                 let pos = world.actor_pos(self.collider) + vec2(self.width / 2.0, self.height / 2.0) - vec2(size.x / 2.0, size.y / 2.0);
@@ -354,7 +358,7 @@ impl Player {
                 let projectile  = Projectile::new(
                     pos,
                     size,
-                    -100,
+                    damage,
                     4.0,
                     TextureKey::Coin0, ProjectileOrigin::Player, movement_vector).await;
 
@@ -371,7 +375,7 @@ impl Player {
                 let projectile  = Projectile::new(
                     pos,
                     size,
-                    -100,
+                    damage,
                     4.0,
                     TextureKey::Coin0, ProjectileOrigin::Player, movement_vector).await;
 
@@ -388,7 +392,7 @@ impl Player {
                 let projectile  = Projectile::new(
                     pos,
                     size,
-                    -100,
+                    damage,
                     4.0,
                     TextureKey::Coin0, ProjectileOrigin::Player, movement_vector).await;
 
