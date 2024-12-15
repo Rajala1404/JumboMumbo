@@ -1,6 +1,7 @@
 use std::collections::BTreeMap;
 use macroquad::prelude::Texture2D;
-use crate::utils::structs::{Level, LevelSceneData, PersistentLevelData, Settings};
+use crate::logic::level::{Level, LevelSceneData, PersistentLevelData};
+use crate::utils::structs::Settings;
 use crate::scenes::levels::level_0::level_0;
 use crate::utils::enums::{Scene, SceneTextureKey, TextureKey};
 

@@ -10,93 +10,13 @@ use macroquad::time::get_time;
 use macroquad::window::screen_width;
 use macroquad_platformer::{Actor, World};
 use crate::logic::collider::Collider;
-use crate::utils::structs::{LevelData, Projectile, ProjectileOrigin, Settings, Trigger};
+use crate::logic::level::{LevelData, Trigger};
+use crate::logic::projectile::{Projectile, ProjectileOrigin};
+use crate::utils::structs::Settings;
 use crate::utils::enums::{Animation, AnimationType, Direction, TextureKey};
 use crate::utils::mathemann::point_to_point_direction_with_speed;
 
 // This file contains everything that is for the player
-
-#[derive(PartialEq, Clone, Debug)]
-pub struct PowerUp {
-    pub collected: bool,
-    pub power_up: PlayerPowerUp,
-    /// Stores the duration of the [PowerUp]
-    pub duration: f64,
-    pub collider: Collider,
-    pub texture_key: TextureKey,
-    pub animation: Animation,
-    pub size: Vec2,
-    pub speed: Vec2,
-}
-
-impl PowerUp {
-    pub async fn new(power_up: PlayerPowerUp, duration: f64, pos: Vec2, size: Vec2, texture_key: TextureKey, texture_range: (u32, u32), texture_speed: f64) -> Self {
-        let collected = false;
-        let collider = Collider::new_collectible(pos, size.x, size.y, vec2(0.0, 0.0)).await;
-        let animation = Animation::new(AnimationType::Cycle(texture_range.0, texture_range.1, texture_speed));
-        let speed = vec2(0.0, 0.0);
-
-        Self {
-            collected,
-            power_up,
-            duration,
-            collider,
-            texture_key,
-            animation,
-            size,
-            speed,
-        }
-    }
-
-    /// Runs all checks that may be needed on an [PowerUp]
-    pub async fn tick(&mut self, player: &mut Player) {
-        // Check if the collectible collides with another thing
-        if self.collider.touching_player(player).await {
-            self.collected = true;
-            player.power_ups.insert(self.power_up.clone(), self.clone().into());
-            player.power_ups_exec.insert(self.power_up.clone(), get_time());
-        }
-    }
-
-    pub async fn render(&mut self, textures: &BTreeMap<TextureKey, Vec<Texture2D>>) {
-        let pos = self.collider.pos().await;
-
-        match self.animation.animation_type {
-            AnimationType::Cycle(_, _, _) => {
-                self.animation.animate().await;
-                let texture = textures.get(&self.texture_key).unwrap().get(self.animation.index as usize).unwrap();
-                draw_texture_ex(
-                    texture,
-                    pos.x,
-                    pos.y,
-                    WHITE,
-                    DrawTextureParams {
-                        dest_size: Some(self.size),
-                        ..Default::default()
-                    },
-                );
-            }
-        }
-    }
-}
-
-#[derive(PartialEq, Clone, Debug)]
-pub struct CollectedPowerUp {
-    pub duration: f64,
-    pub texture_key: TextureKey,
-    pub animation: Animation,
-}
-
-impl From<PowerUp> for CollectedPowerUp {
-    fn from(value: PowerUp) -> Self {
-        Self {
-            duration: value.duration,
-            texture_key: value.texture_key,
-            animation: value.animation,
-        }
-    }
-}
-
 #[derive(PartialEq, Clone, Debug)]
 pub struct PlayerUIElement {
     pub element_type: PlayerUIElementType,
@@ -394,6 +314,18 @@ impl Player {
             }
         }
 
+        let projectiles = &level_data.projectiles;
+        let colliding_projectiles = self.collider_new.collide_check_projectile(projectiles, vec2(0.0, 0.0)).await;
+        for projectile in colliding_projectiles {
+            let projectile = projectiles.get(projectile).expect("Oh no! This should be impossible!");
+            match projectile.origin {
+                ProjectileOrigin::Player => { continue; }
+                ProjectileOrigin::Canon => {
+                    self.damage(projectile.damage).await;
+                }
+            }
+        }
+
         if *self.triggers.get(&PlayerTrigger::DamageOverlay).unwrap_or(&false) {
             self.color = RED;
             if self.triggers_exec.get(&PlayerTrigger::DamageOverlay).unwrap() + 0.25 < get_time() {
@@ -412,12 +344,12 @@ impl Player {
                 let size = vec2(32.0, 32.0) * settings.gui_scale;
                 let pos = world.actor_pos(self.collider) + vec2(self.width / 2.0, self.height / 2.0) - vec2(size.x / 2.0, size.y / 2.0);
                 let pos_c_x = world.actor_pos(self.camera_collider[0]);
-                let pos_c_y = world.actor_pos(self.camera_collider[3]);
+                let pos_c_y = world.actor_pos(self.camera_collider[2]);
                 let (mut mouse_x, mut mouse_y) = mouse_position();
                 mouse_x += pos_c_x.x;
-                mouse_y -= pos_c_y.normalize().y;
+                mouse_y += pos_c_y.y;
 
-                let movement_vector = point_to_point_direction_with_speed(pos, vec2(mouse_x, mouse_y), 1000.0 * settings.gui_scale).await;
+                let movement_vector = point_to_point_direction_with_speed(pos, vec2(mouse_x, mouse_y), 2000.0 * settings.gui_scale).await;
 
                 let projectile  = Projectile::new(
                     pos,
@@ -434,7 +366,7 @@ impl Player {
                 let size = vec2(32.0, 32.0) * settings.gui_scale;
                 let pos = world.actor_pos(self.collider) + vec2(self.width / 2.0, self.height / 2.0)- vec2(size.x / 2.0, size.y / 2.0);
 
-                let movement_vector = vec2(-1.0, 0.0) * (1000.0 * settings.gui_scale);
+                let movement_vector = vec2(-1.0, 0.0) * (2000.0 * settings.gui_scale);
 
                 let projectile  = Projectile::new(
                     pos,
@@ -451,7 +383,7 @@ impl Player {
                 let size = vec2(32.0, 32.0) * settings.gui_scale;
                 let pos = world.actor_pos(self.collider) + vec2(self.width / 2.0, self.height / 2.0)- vec2(size.x / 2.0, size.y / 2.0);
 
-                let movement_vector = vec2(1.0, 0.0) * (1000.0 * settings.gui_scale);
+                let movement_vector = vec2(1.0, 0.0) * (2000.0 * settings.gui_scale);
 
                 let projectile  = Projectile::new(
                     pos,
@@ -604,5 +536,86 @@ impl Player {
         }
 
         result
+    }
+}
+
+#[derive(PartialEq, Clone, Debug)]
+pub struct PowerUp {
+    pub collected: bool,
+    pub power_up: PlayerPowerUp,
+    /// Stores the duration of the [PowerUp]
+    pub duration: f64,
+    pub collider: Collider,
+    pub texture_key: TextureKey,
+    pub animation: Animation,
+    pub size: Vec2,
+    pub speed: Vec2,
+}
+
+impl PowerUp {
+    pub async fn new(power_up: PlayerPowerUp, duration: f64, pos: Vec2, size: Vec2, texture_key: TextureKey, texture_range: (u32, u32), texture_speed: f64) -> Self {
+        let collected = false;
+        let collider = Collider::new_collectible(pos, size.x, size.y, vec2(0.0, 0.0)).await;
+        let animation = Animation::new(AnimationType::Cycle(texture_range.0, texture_range.1, texture_speed));
+        let speed = vec2(0.0, 0.0);
+
+        Self {
+            collected,
+            power_up,
+            duration,
+            collider,
+            texture_key,
+            animation,
+            size,
+            speed,
+        }
+    }
+
+    /// Runs all checks that may be needed on an [PowerUp]
+    pub async fn tick(&mut self, player: &mut Player) {
+        // Check if the collectible collides with another thing
+        if self.collider.touching_player(player).await {
+            self.collected = true;
+            player.power_ups.insert(self.power_up.clone(), self.clone().into());
+            player.power_ups_exec.insert(self.power_up.clone(), get_time());
+        }
+    }
+
+    pub async fn render(&mut self, textures: &BTreeMap<TextureKey, Vec<Texture2D>>) {
+        let pos = self.collider.pos().await;
+
+        match self.animation.animation_type {
+            AnimationType::Cycle(_, _, _) => {
+                self.animation.animate().await;
+                let texture = textures.get(&self.texture_key).unwrap().get(self.animation.index as usize).unwrap();
+                draw_texture_ex(
+                    texture,
+                    pos.x,
+                    pos.y,
+                    WHITE,
+                    DrawTextureParams {
+                        dest_size: Some(self.size),
+                        ..Default::default()
+                    },
+                );
+            }
+        }
+    }
+}
+
+#[derive(PartialEq, Clone, Debug)]
+pub struct CollectedPowerUp {
+    pub duration: f64,
+    pub texture_key: TextureKey,
+    pub animation: Animation,
+}
+
+impl From<PowerUp> for CollectedPowerUp {
+    fn from(value: PowerUp) -> Self {
+        Self {
+            duration: value.duration,
+            texture_key: value.texture_key,
+            animation: value.animation,
+        }
     }
 }

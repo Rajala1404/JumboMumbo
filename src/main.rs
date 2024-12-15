@@ -14,10 +14,10 @@ use utils::enums::{Scene, SceneTextureKey, TextureKey};
 use crate::scenes::level_selector::level_selector;
 use crate::scenes::levels::levels::start_level;
 use crate::scenes::main_menu::main_menu;
-use utils::structs::LevelSceneData;
+use logic::level::LevelSceneData;
 use utils::structs::{Settings, TempSettings};
 use crate::scenes::settings_menu::settings_menu;
-use crate::utils::structs::PersistentLevelData;
+use logic::level::PersistentLevelData;
 
 fn window_conf() -> Conf {
     Conf {

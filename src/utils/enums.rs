@@ -1,5 +1,5 @@
 use macroquad::time::get_time;
-use crate::utils;
+use crate::logic;
 
 #[derive(Ord, PartialOrd, Eq, PartialEq, Copy, Clone)]
 pub enum SceneTextureKey {
@@ -27,7 +27,14 @@ pub enum TextureKey {
     /// ##### This texture needs to be animated ([AnimationType::Cycle]) <br>
     /// ###### Ranges:
     /// `0, 20` is the sword (kills) texture <br>
-    Icons0
+    Icons0,
+
+    /// No Animation
+    /// `0` is [Direction::Left]
+    /// `1` is [Direction::Right]
+    /// `2` is [Direction::Up]
+    /// `3` is [Direction::Down]
+    Cannon0,
 }
 
 pub enum Scene {
@@ -35,7 +42,7 @@ pub enum Scene {
     SettingsMenu,
     /// The i32 is the Page
     LevelSelector(i32),
-    Level(utils::structs::Level)
+    Level(logic::level::Level)
 }
 
 #[derive(Copy, Clone, PartialEq, Debug)]

@@ -4,12 +4,15 @@ use crate::Settings;
 use macroquad::prelude::*;
 use macroquad_platformer::World;
 use stopwatch2::Stopwatch;
+use crate::logic::cannon::Cannon;
+use crate::logic::collectible::{Collectible, CollectibleType};
 use crate::logic::collider::Collider;
 use crate::logic::enemy::Enemy;
+use crate::logic::level::{Level, LevelData, LevelSceneData, PersistentLevelData};
+use crate::logic::platform::{Platform, PlatformTile};
 use crate::logic::player::{Player, PlayerPowerUp, PowerUp};
 use crate::utils::debugger;
-use crate::utils::enums::{Animation, AnimationType, Scene, SceneTextureKey, TextureKey};
-use crate::utils::structs::{Collectible, CollectibleType, Level, LevelData, LevelSceneData, PersistentLevelData, Platform, PlatformTile};
+use crate::utils::enums::{Animation, AnimationType, Direction, Scene, SceneTextureKey, TextureKey};
 use crate::utils::texture::{get_texture_path, load_textures_from_tile_map};
 
 pub async fn level_0(scene: &mut Scene, mut textures: &mut BTreeMap<SceneTextureKey, BTreeMap<TextureKey, Vec<Texture2D>>>, level_scene_data: &mut LevelSceneData, persistent_level_data: &mut PersistentLevelData, settings: &Settings) {
@@ -61,6 +64,7 @@ async fn layout(settings: &Settings) -> LevelSceneData {
     let mut platforms = Vec::new();
     let mut collectibles = Vec::new();
     let mut enemies = Vec::new();
+    let mut cannons = Vec::new();
     let mut power_ups = Vec::new();
 
     { // Base Platform 1
@@ -130,13 +134,72 @@ async fn layout(settings: &Settings) -> LevelSceneData {
         0.1
     ).await);
 
-    platforms.push(Platform::floating(
-        3,
-        size,
-        TextureKey::Platform0,
-        vec2(size.x * 12.0, screen_height() - (size.y * 5.0 + size.y / 4.0)),
-        &mut world
-    ).await);
+    { // Floating Platform
+        let pos = vec2(size.x * 12.0, screen_height() - (size.y * 5.0 + size.y / 4.0));
+
+        platforms.push(Platform::floating(
+            3,
+            size,
+            TextureKey::Platform0,
+            pos,
+            &mut world,
+        ).await);
+
+        { // Enemy on Platform
+            let size = vec2(size.x, size.y);
+            let pos = vec2(size.x * 13.5, screen_height() - size.y * 7.0);
+            let height = size.y;
+            enemies.push(Enemy::new(
+                pos,
+                -50,
+                &mut world,
+                vec2(height, height),
+                TextureKey::Player, // Player for now
+            ).await);
+        }
+        { // Coin above Floating Platform
+            let size = vec2(size.x, size.y);
+            collectibles.push(Collectible::new(
+                CollectibleType::Coin,
+                vec2(size.x * 13.5, screen_height() - size.y * 7.0),
+                size,
+                TextureKey::Coin0,
+                Animation::new(AnimationType::Cycle(0, 5, 0.1)),
+                nv2,
+            ).await)
+        }
+        // Left cannon below the platform
+        cannons.push(Cannon::new(
+            pos + size,
+            size,
+            2.0,
+            0.0,
+            Direction::Down,
+            1500.0 * settings.gui_scale,
+            4.0,
+            TextureKey::Cannon0,
+            TextureKey::Coin0,
+            -100,
+            &mut world
+
+        ).await);
+
+        // Right cannon below the platform
+        cannons.push(Cannon::new(
+            pos + vec2(width * 2.0, height),
+            size,
+            2.0,
+            0.1,
+            Direction::Down,
+            1500.0 * settings.gui_scale,
+            4.0,
+            TextureKey::Cannon0,
+            TextureKey::Coin0,
+            -100,
+            &mut world
+
+        ).await);
+    }
 
     platforms.push(Platform::floating(
         3,
@@ -156,31 +219,6 @@ async fn layout(settings: &Settings) -> LevelSceneData {
         0.1
     ).await);
 
-    { // Coin above Floating Platform
-        let size = vec2(size.x, size.y);
-        collectibles.push(Collectible::new(
-            CollectibleType::Coin,
-            vec2(size.x * 13.5, screen_height() - size.y * 7.0),
-            size,
-            TextureKey::Coin0,
-            Animation::new(AnimationType::Cycle(0, 5, 0.1)),
-            nv2
-        ).await)
-    }
-
-    { // Enemy on Platform
-        let size = vec2(size.x, size.y);
-        let pos = vec2(size.x * 13.5, screen_height() - size.y * 7.0);
-        let height = size.y;
-        enemies.push(Enemy::new(
-            pos,
-            -50,
-            &mut world,
-            vec2(height, height),
-            TextureKey::Player // Player for now
-        ).await);
-    }
-
     let pos = vec2(400.0 * settings.gui_scale, 0.0);
     LevelSceneData {
         level_data: LevelData {
@@ -191,6 +229,7 @@ async fn layout(settings: &Settings) -> LevelSceneData {
             platforms,
             collectibles,
             enemies,
+            cannons,
             projectiles: Vec::new(),
             power_ups,
             triggers: BTreeMap::new(),
@@ -247,6 +286,12 @@ async fn load_textures(textures: &mut BTreeMap<SceneTextureKey, BTreeMap<Texture
         load_textures_from_tile_map(path).await
     };
     result.insert(TextureKey::Icons0, icons_0);
+
+    let cannons_0 = {
+        let path = get_texture_path(TextureKey::Cannon0).await;
+        load_textures_from_tile_map(path).await
+    };
+    result.insert(TextureKey::Cannon0, cannons_0);
 
     // Insert result into the global texture map
     textures.insert(SceneTextureKey::Level0, result);

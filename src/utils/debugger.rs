@@ -7,8 +7,9 @@ use macroquad::text::{draw_text, measure_text};
 use macroquad::time::get_fps;
 use macroquad_platformer::World;
 use crate::logic::collider::Collider;
+use crate::logic::level::{LevelSceneData, Trigger};
 use crate::logic::player::Player;
-use crate::utils::structs::{LevelSceneData, Settings, Trigger};
+use crate::utils::structs::Settings;
 
 pub async fn draw_camera_collider(world: &World, player: &Player, settings: &Settings) {
     let x_offset =  screen_width() / 60.0;
