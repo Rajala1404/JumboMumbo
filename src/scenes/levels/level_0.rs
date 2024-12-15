@@ -7,12 +7,13 @@ use stopwatch2::Stopwatch;
 use crate::logic::collider::Collider;
 use crate::logic::enemy::Enemy;
 use crate::logic::player::{Player, PlayerPowerUp, PowerUp};
-use crate::scenes::levels::structs::{Collectible, Level, LevelData, LevelSceneData, Platform, PlatformTile};
+use crate::scenes::levels::structs::{Collectible, CollectibleType, Level, LevelData, LevelSceneData, Platform, PlatformTile};
 use crate::utils::debugger;
 use crate::utils::enums::{Animation, AnimationType, Scene, SceneTextureKey, TextureKey};
+use crate::utils::structs::PersistentLevelData;
 use crate::utils::texture::{get_texture_path, load_textures_from_tile_map};
 
-pub async fn level_0(scene: &mut Scene, mut textures: &mut BTreeMap<SceneTextureKey, BTreeMap<TextureKey, Vec<Texture2D>>>, level_scene_data: &mut LevelSceneData, settings: &Settings) {
+pub async fn level_0(scene: &mut Scene, mut textures: &mut BTreeMap<SceneTextureKey, BTreeMap<TextureKey, Vec<Texture2D>>>, level_scene_data: &mut LevelSceneData, persistent_level_data: &mut PersistentLevelData, settings: &Settings) {
     clear_background(DARKBLUE);
 
     // Load textures if not loaded already
@@ -38,6 +39,7 @@ pub async fn level_0(scene: &mut Scene, mut textures: &mut BTreeMap<SceneTexture
 
     if is_key_down(KeyCode::Escape) {
         *scene = Scene::LevelSelector(0);
+        level_scene_data.level_data.save(persistent_level_data, settings).await;
         *level_scene_data = LevelSceneData::empty().await;
         set_default_camera();
         return;
@@ -157,14 +159,14 @@ async fn layout(settings: &Settings) -> LevelSceneData {
 
     { // Coin above Floating Platform
         let size = vec2(size.x, size.y);
-        collectibles.push(Collectible {
-            collected: false,
-            collider: Collider::new_collectible(vec2(size.x * 13.5, screen_height() - size.y * 7.0), size.x, size.y, nv2).await,
-            texture_key: TextureKey::Coin0,
-            animation: Animation::new(AnimationType::Cycle(0, 5, 0.1)),
+        collectibles.push(Collectible::new(
+            CollectibleType::Coin,
+            vec2(size.x * 13.5, screen_height() - size.y * 7.0),
             size,
-            speed: nv2
-        });
+            TextureKey::Coin0,
+            Animation::new(AnimationType::Cycle(0, 5, 0.1)),
+            nv2
+        ).await)
     }
 
     { // Enemy on Platform
@@ -183,6 +185,8 @@ async fn layout(settings: &Settings) -> LevelSceneData {
     let pos = vec2(400.0 * settings.gui_scale, 0.0);
     LevelSceneData {
         level_data: LevelData {
+            start_time: get_time(),
+
             level: Some(Level::Level0),
             player: Some(Player::new(size.x, size.y, vec2(pos.x, nv2.y), 0, &mut world).await),
             platforms,
@@ -238,6 +242,12 @@ async fn load_textures(textures: &mut BTreeMap<SceneTextureKey, BTreeMap<Texture
         load_textures_from_tile_map(path).await
     };
     result.insert(TextureKey::PowerUps0, power_ups_0);
+
+    let icons_0 =  {
+        let path = get_texture_path(TextureKey::Icons0).await;
+        load_textures_from_tile_map(path).await
+    };
+    result.insert(TextureKey::Icons0, icons_0);
 
     // Insert result into the global texture map
     textures.insert(SceneTextureKey::Level0, result);

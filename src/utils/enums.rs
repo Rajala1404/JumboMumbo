@@ -15,13 +15,19 @@ pub enum TextureKey {
     Platform0,
 
     // Collectibles
-    /// This texture needs to be animated ([AnimationType::Cycle])
+    /// This texture needs to be animated ([AnimationType::Cycle]) <br>
+    /// `0, 5` is the range
     Coin0,
 
-    /// This texture needs to be animated ([AnimationType::Cycle])
-    /// `0, 17` is the jump boost texture
+    /// This texture needs to be animated ([AnimationType::Cycle]) <br>
+    /// `0, 17` is the jump boost texture <br>
     /// `18, 40` is the speed boost texture
     PowerUps0,
+
+    /// ##### This texture needs to be animated ([AnimationType::Cycle]) <br>
+    /// ###### Ranges:
+    /// `0, 20` is the sword (kills) texture <br>
+    Icons0
 }
 
 pub enum Scene {

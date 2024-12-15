@@ -3,7 +3,7 @@ use macroquad::camera::set_default_camera;
 use macroquad::color::{BLACK, WHITE};
 use macroquad::prelude::Texture2D;
 use macroquad::window::{clear_background, screen_height};
-use crate::scenes::levels::structs::{LevelSceneData, Trigger};
+use crate::scenes::levels::structs::{CollectibleType, LevelSceneData, Trigger};
 use crate::utils::structs::Settings;
 use crate::utils::enums::TextureKey;
 use crate::utils::text::{draw_text_center, draw_text_centered};
@@ -78,6 +78,9 @@ pub async fn tick_level(level_scene_data: &mut LevelSceneData, settings: &Settin
         }
 
         for i in collectibles_to_remove {
+            if level_scene_data.level_data.collectibles.get(i).unwrap().collectible_type == CollectibleType::Coin {
+                level_scene_data.level_data.player.as_mut().unwrap().coins += 1;
+            }
             level_scene_data.level_data.collectibles.remove(i);
         }
     }

@@ -149,8 +149,11 @@ impl Enemy {
                             }
 
                             if self.health == 0 {
+                                player.kills += 1;
                                 self.deletable = true;
                             }
+
+                            player.total_damage += -projectile.unwrap().damage as u32;
 
                             self.waiters.insert(EnemyWaiter::DamageOverlay, true);
                             self.waiters_exec.insert(EnemyWaiter::DamageOverlay, get_time());

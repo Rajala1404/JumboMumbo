@@ -17,6 +17,7 @@ use crate::scenes::main_menu::main_menu;
 use scenes::levels::structs::LevelSceneData;
 use utils::structs::{Settings, TempSettings};
 use crate::scenes::settings_menu::settings_menu;
+use crate::utils::structs::PersistentLevelData;
 
 fn window_conf() -> Conf {
     Conf {
@@ -58,7 +59,8 @@ async fn main() {
                     settings
                 },
                 false => {
-                    let settings = Settings::new(&file_path).await;
+                    let level_data_path = format!("{}/level_data.json", config_path);
+                    let settings = Settings::new(file_path.to_owned(), level_data_path).await;
                     let mut file = fs::File::create(&file_path).unwrap();
 
                     let s_settings = serde_json::to_string_pretty(&settings).expect("Couldn't serialize settings");
@@ -71,9 +73,26 @@ async fn main() {
 
         settings
     };
+    let mut temp_settings = TempSettings { settings: settings.clone() };
     println!("{:?}", settings);
 
-    let mut temp_settings = TempSettings { settings: settings.clone() };
+    let mut persistent_level_data = {
+        match fs::exists(&settings.level_data_path).unwrap() {
+            true => {
+                let file = fs::File::open(&settings.level_data_path).expect("Couldn't open level data file");
+                let persistent_level_data: PersistentLevelData = serde_json::from_reader(file).expect("Couldn't read level data file");
+
+                persistent_level_data
+            }
+            false => {
+                let persistent_level_data = PersistentLevelData::new();
+
+                persistent_level_data.save(&settings).await;
+
+                persistent_level_data
+            }
+        }
+    };
 
     let skin = {
         let font = load_ttf_font("res/fonts/MinimalPixel v2.ttf").await.unwrap();
@@ -138,7 +157,7 @@ async fn main() {
                 level_selector(&mut scene).await;
             }
             Scene::Level(_) => {
-                start_level(&mut scene, &mut textures, &mut level_scene_data, &settings).await;
+                start_level(&mut scene, &mut textures, &mut level_scene_data, &mut persistent_level_data, &settings).await;
             }
         }
 

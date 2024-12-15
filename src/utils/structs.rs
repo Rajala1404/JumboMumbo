@@ -1,6 +1,10 @@
 use std::collections::BTreeMap;
+use std::fs;
+use std::io::Write;
+use std::time::SystemTime;
 use serde::{Deserialize, Serialize};
 use macroquad::math::f32;
+use crate::scenes::levels::structs::Level;
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Serialize, Deserialize)]
 pub struct Rect {
@@ -85,6 +89,7 @@ impl From<macroquad::math::Vec2> for Vec2i {
 pub struct Settings {
     /// The Path of the Game's config directory
     pub path: String,
+    pub level_data_path: String,
     pub gui_scale: f32,
 }
 
@@ -95,9 +100,10 @@ pub struct TempSettings {
 }
 
 impl Settings {
-    pub async fn new(path: &String) -> Settings {
+    pub async fn new(path: String, level_data_path: String) -> Settings {
         Settings {
-            path: path.to_owned(),
+            path,
+            level_data_path,
             gui_scale: 1.0,
         }
     }
@@ -174,3 +180,68 @@ impl<'a, T> IntoIterator for &'a mut Matrix<T> {
     }
 }
 
+#[derive(PartialEq, Clone, Serialize, Deserialize, Debug)]
+/// Contains ALL data that may be saved across multiple sessions of levels
+pub struct PersistentLevelData {
+    pub stats: BTreeMap<Level, LevelStat>,
+    pub scores: BTreeMap<Level, Vec<LevelScore>>
+}
+
+impl PersistentLevelData {
+    pub fn new() -> Self {
+        let stats = BTreeMap::new();
+        let scores= BTreeMap::new();
+
+        Self { stats, scores }
+    }
+
+    pub async fn save(&self, settings: &Settings) {
+        let mut file = fs::File::create(&settings.level_data_path).unwrap();
+
+        let s_persistent_level_data = serde_json::to_string_pretty(&self).expect("Couldn't serialize level data");
+        file.write_all(s_persistent_level_data.as_bytes()).expect("Couldn't write level data file");
+    }
+}
+
+#[derive(PartialEq, Clone, Serialize, Deserialize, Debug)]
+pub struct LevelStat {
+    pub level: Level,
+    /// The total amount of tries to play the level
+    pub plays: u32,
+    /// The total amount of all deaths
+    pub deaths: u32,
+}
+
+impl LevelStat {
+    pub fn new(level: Level) -> Self {
+        Self { level, plays: 0, deaths: 0 }
+    }
+
+    pub fn update(&mut self, deaths: u32) {
+        self.plays += 1;
+        self.deaths += deaths;
+    }
+}
+
+#[derive(PartialEq, Clone, Serialize, Deserialize, Debug)]
+pub struct LevelScore {
+    /// The time this was created
+    pub time: SystemTime,
+    /// The total playtime of the level
+    pub playtime: f64,
+    /// The total amount of collected coins
+    pub coins: u32,
+    /// The total amount of kills
+    pub kills: u32,
+    /// The total mount of damage that the player has done
+    pub total_damage: u32,
+    /// The total amount of damage that the player received
+    pub total_damage_received: u32
+}
+
+impl LevelScore {
+    pub fn new(playtime: f64, coins: u32, kills: u32, total_damage: u32, total_damage_received: u32) -> LevelScore {
+        let time = SystemTime::now();
+        Self { time, playtime, coins, kills, total_damage, total_damage_received }
+    }
+}

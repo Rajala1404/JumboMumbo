@@ -98,9 +98,75 @@ impl From<PowerUp> for CollectedPowerUp {
     }
 }
 
+#[derive(PartialEq, Clone, Debug)]
+pub struct PlayerUIElement {
+    pub element_type: PlayerUIElementType,
+    pub pos: Vec2,
+    pub texture_key: TextureKey,
+    pub texture_size: Vec2,
+    pub font_size: f32,
+    pub animation: Animation,
+}
+
+#[derive(PartialEq, Eq, Clone, Ord, PartialOrd, Copy, Debug)]
+pub enum PlayerUIElementType {
+    Coins,
+    Kills
+}
+
+impl PlayerUIElement {
+    pub fn new(element_type: PlayerUIElementType, texture_key: TextureKey, texture_size: Vec2, animation: Animation, font_size: f32) -> Self {
+        Self {
+            element_type,
+            pos: vec2(0.0, 0.0),
+            texture_key,
+            texture_size,
+            font_size,
+            animation
+        }
+    }
+
+    pub fn change_pos(&mut self, pos: Vec2) {
+        self.pos = pos;
+    }
+
+    pub async fn render(&mut self, textures: &BTreeMap<TextureKey, Vec<Texture2D>>, value: &String) {
+        match self.animation.animation_type {
+            AnimationType::Cycle(_, _, _) => {
+                self.animation.animate().await;
+                let texture = textures.get(&self.texture_key).unwrap().get(self.animation.index as usize).unwrap();
+                draw_texture_ex(
+                    texture,
+                    self.pos.x + self.texture_size.x / 8.0,
+                    self.pos.y,
+                    WHITE,
+                    DrawTextureParams {
+                        dest_size: Some(self.texture_size),
+                        ..Default::default()
+                    },
+                );
+            }
+        }
+
+        let text_d = measure_text(value, None, self.font_size as _, 1.0);
+        let pos = vec2(self.pos.x + self.texture_size.x + self.texture_size.x / 4.0, self.pos.y + text_d.height * 1.5);
+        draw_text(value, pos.x, pos.y, self.font_size, WHITE);
+    }
+
+}
+
 #[derive(PartialEq, Clone)]
 pub struct Player {
     pub health: i16,
+    /// The total amount of kills
+    pub kills: u32,
+    /// The total amount of collected coins
+    pub coins: u32,
+    /// The total mount of damage that the player has done
+    pub total_damage: u32,
+    /// The total amount of damage that the player received
+    pub total_damage_received: u32,
+    pub ui_elements: BTreeMap<PlayerUIElementType, PlayerUIElement>,
     pub color: Color,
     pub width: f32,
     pub height: f32,
@@ -138,8 +204,36 @@ pub enum PlayerPowerUp {
 
 impl Player {
     pub async fn new(width: f32, height: f32, pos: Vec2, state: i8, world: &mut World) -> Self {
+        let mut ui_elements = BTreeMap::new();
+        // Coin counter
+        ui_elements.insert(PlayerUIElementType::Coins, PlayerUIElement::new(
+            PlayerUIElementType::Coins,
+            TextureKey::Coin0,
+            vec2(width, height) / 2.0,
+            Animation::new(
+                AnimationType::Cycle(0, 5, 0.1)
+            ),
+            height / 2.0
+        ));
+
+        // Kill counter
+        ui_elements.insert(PlayerUIElementType::Kills, PlayerUIElement::new(
+            PlayerUIElementType::Kills,
+            TextureKey::Icons0,
+            vec2(width, height) / 2.0,
+            Animation::new(
+                AnimationType::Cycle(0, 20, 0.1)
+            ),
+            height / 2.0
+        ));
+
         Player {
             health: 1000,
+            kills: 0,
+            coins: 0,
+            total_damage: 0,
+            total_damage_received: 0,
+            ui_elements,
             color: WHITE,
             width,
             height,
@@ -399,7 +493,10 @@ impl Player {
     pub async fn damage(&mut self, health: i16) {
         if !self.triggers.get(&PlayerTrigger::DamageCooldown).unwrap_or(&false) {
             self.health += health;
+            self.total_damage_received += -health as u32;
+
             if self.health < 0 { self.health = 0; }
+
             self.triggers.insert(PlayerTrigger::DamageOverlay, true);
             self.triggers_exec.insert(PlayerTrigger::DamageOverlay, get_time());
             self.triggers.insert(PlayerTrigger::DamageCooldown, true);
@@ -421,11 +518,7 @@ impl Player {
             },
         );
 
-        // Draw Health bar
-        let height = 32.0 * settings.gui_scale;
-        let camera_collider_pos = world.actor_pos(self.camera_collider[0]);
-        let camera_collider_pos_2 = world.actor_pos(self.camera_collider[2]);
-        draw_rectangle(camera_collider_pos.x, camera_collider_pos_2.y, (self.health as f32 / 2.0) * settings.gui_scale, height, RED);
+        self.render_stats(settings, textures, world).await;
 
         // Draw power ups & remaining time
         let power_up_pos = self.power_up_render_pos(settings, world).await;
@@ -471,10 +564,33 @@ impl Player {
         }
     }
 
-    /// result.0 is the position
-    /// result.1 is the texture size
-    /// result.2 is the font size
-    /// result.3 is the spacing between texture and text
+    async fn render_stats(&mut self, settings: &Settings, textures: &BTreeMap<TextureKey, Vec<Texture2D>>, world: &World) {
+        let zero = vec2(world.actor_pos(self.camera_collider[0]).x, world.actor_pos(self.camera_collider[2]).y);
+
+        // Draw Health bar
+        let health_height = 32.0 * settings.gui_scale;
+        draw_rectangle(zero.x, zero.y, (self.health as f32 / 2.0) * settings.gui_scale, health_height, RED);
+
+        // Draw UI Elements
+        let mut current_height = health_height + 8.0 * settings.gui_scale;
+        for (element_type, element) in &mut self.ui_elements {
+            element.change_pos(zero + vec2(0.0, current_height));
+            current_height += element.texture_size.y + 8.0 * settings.gui_scale;
+            match element_type {
+                PlayerUIElementType::Coins => {
+                    element.render(textures, &self.coins.to_string()).await;
+                }
+                PlayerUIElementType::Kills => {
+                    element.render(textures, &self.kills.to_string()).await;
+                }
+            }
+        }
+    }
+
+    /// `result.0` is the position <br>
+    /// `result.1` is the texture size <br>
+    /// `result.2` is the font size <br>
+    /// `result.3` is the spacing between texture and text
     async fn power_up_render_pos(&mut self, settings: &Settings, world: &World) -> BTreeMap<PlayerPowerUp, (Vec2, Vec2, f32, f32)> {
         let font_size = 64.0 * settings.gui_scale;
         let text_size = measure_text("00:00", None, font_size as _, 1.0);

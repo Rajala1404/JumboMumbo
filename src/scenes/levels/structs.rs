@@ -6,12 +6,16 @@ use std::collections::BTreeMap;
 use macroquad::prelude::{draw_texture_ex, DrawTextureParams, Texture2D};
 use macroquad::color::WHITE;
 use macroquad::time::{get_frame_time, get_time};
+use serde::{Deserialize, Serialize};
+use stopwatch2::Stopwatch;
 use crate::logic::collider::Collider;
 use crate::logic::enemy::Enemy;
 use crate::logic::player::{Player, PowerUp};
 use crate::utils::enums::{Animation, AnimationType, TextureKey};
+use crate::utils::structs::{LevelScore, LevelStat, PersistentLevelData, Settings};
+
 /// This enum defines all existing levels
-#[derive(Eq, PartialEq, Clone, Ord, PartialOrd, Debug)]
+#[derive(Eq, PartialEq, Clone, Ord, PartialOrd, Serialize, Deserialize, Debug)]
 pub enum Level {
     Level0,
 }
@@ -27,6 +31,8 @@ pub enum Trigger {
 
 #[derive(Clone)]
 pub struct LevelData {
+    pub start_time: f64,
+
     pub level: Option<Level>,
     pub player: Option<Player>,
     pub platforms: Vec<Platform>,
@@ -39,6 +45,50 @@ pub struct LevelData {
     pub trigger_locks: BTreeMap<Trigger, bool>
 }
 
+impl LevelData {
+    pub async fn save(&self, persistent_level_data: &mut PersistentLevelData, settings: &Settings) {
+        let mut stopwatch = Stopwatch::default();
+        println!("Saving level score and updating stats...");
+        stopwatch.start();
+        let playtime = get_time() - self.start_time;
+        let player = self.player.as_ref().unwrap();
+        let level = self.level.as_ref().unwrap();
+
+        let score = LevelScore::new(
+            playtime,
+            player.coins,
+            player.kills,
+            player.total_damage,
+            player.total_damage_received
+        );
+
+        if persistent_level_data.scores.get(level).is_none() {
+            persistent_level_data.scores.insert(level.to_owned(), Vec::new());
+        }
+
+        if persistent_level_data.stats.get(level).is_none() {
+            persistent_level_data.stats.insert(level.to_owned(), LevelStat::new(level.to_owned()));
+        }
+        let stats_ref = persistent_level_data.stats.get_mut(level).unwrap();
+        let deaths = {
+            if *self.triggers.get(&Trigger::GameOver).unwrap_or(&false) {
+                1
+            } else {
+                0
+            }
+        };
+        stats_ref.update(deaths);
+
+        let score_space = persistent_level_data.scores.get_mut(level).unwrap();
+        score_space.push(score);
+
+        persistent_level_data.save(settings).await;
+
+        stopwatch.stop();
+        println!("Saved level level score and updated stats! Took {}ms", stopwatch.elapsed().as_millis());
+    }
+}
+
 /// Holds all data a level can possibly have
 pub struct LevelSceneData {
     pub level_data: LevelData,
@@ -48,6 +98,8 @@ pub struct LevelSceneData {
 impl LevelSceneData {
     pub async fn empty() -> Self {
         let level_data = LevelData {
+            start_time: 0.0,
+
             level: None,
             player: None,
             platforms: Vec::new(),
@@ -156,6 +208,7 @@ impl PlatformTile {
 
 #[derive(PartialEq, Clone, Debug)]
 pub struct Collectible {
+    pub collectible_type: CollectibleType,
     pub collected: bool,
     pub collider: Collider,
     pub texture_key: TextureKey,
@@ -164,7 +217,27 @@ pub struct Collectible {
     pub speed: Vec2,
 }
 
+#[derive(PartialEq, Clone, Debug)]
+pub enum CollectibleType {
+    Coin,
+}
+
 impl Collectible {
+    pub async fn new(collectible_type: CollectibleType, pos: Vec2, size: Vec2, texture_key: TextureKey, animation: Animation, speed: Vec2) -> Self {
+        let collected = false;
+        let collider = Collider::new_collectible(pos, size.x, size.y, vec2(0.0, 0.0)).await;
+
+        Self {
+            collectible_type,
+            collected,
+            collider,
+            texture_key,
+            animation,
+            size,
+            speed,
+        }
+    }
+
     /// Runs all checks that may get called onto a collectible
     pub async fn check(&mut self, player: &Player) {
         // Check if the collectible collides with another thing
