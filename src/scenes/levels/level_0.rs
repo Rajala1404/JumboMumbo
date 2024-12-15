@@ -218,7 +218,7 @@ async fn layout(settings: &Settings) -> LevelSceneData {
             pos + vec2(width * -8.0, height * -8.0),
             size,
             TextureKey::PowerUps0,
-            (64, 84),
+            (64, 83),
             0.1
         ).await)
     }

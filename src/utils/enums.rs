@@ -23,7 +23,7 @@ pub enum TextureKey {
     /// `0, 17` is the jump boost texture <br>
     /// `18, 40` is the speed boost texture <br>
     /// `41, 63` is the double coins texture <br>
-    /// `64, 84` is the damage boost texture
+    /// `64, 83` is the damage boost texture
     PowerUps0,
 
     /// ##### This texture needs to be animated ([AnimationType::Cycle]) <br>
