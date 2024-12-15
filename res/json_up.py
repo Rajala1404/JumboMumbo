@@ -9,4 +9,4 @@ def print_rectangles(x_step, max_x, y):
         print('    },')
         x += x_step
 
-print_rectangles(16.0, 48.0, 0.0)
+print_rectangles(16.0, 353.0, 32.0)

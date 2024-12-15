@@ -199,6 +199,17 @@ async fn layout(settings: &Settings) -> LevelSceneData {
             &mut world
 
         ).await);
+
+        // Powerup in middle of cannons
+        power_ups.push(PowerUp::new(
+            PlayerPowerUp::Coins2x,
+            20.0,
+            pos + vec2(width * 1.5, height * 2.5),
+            size,
+            TextureKey::PowerUps0,
+            (41, 63),
+            0.1
+        ).await)
     }
 
     platforms.push(Platform::floating(

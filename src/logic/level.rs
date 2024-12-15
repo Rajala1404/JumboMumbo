@@ -13,7 +13,7 @@ use crate::logic::cannon::Cannon;
 use crate::logic::collectible::{Collectible, CollectibleType};
 use crate::logic::enemy::Enemy;
 use crate::logic::platform::Platform;
-use crate::logic::player::{Player, PowerUp};
+use crate::logic::player::{Player, PlayerPowerUp, PowerUp};
 use crate::logic::projectile::Projectile;
 use crate::utils::structs::{Settings};
 use crate::utils::enums::TextureKey;
@@ -98,7 +98,12 @@ pub async fn tick_level(level_scene_data: &mut LevelSceneData, settings: &Settin
 
         for i in collectibles_to_remove {
             if level_scene_data.level_data.collectibles.get(i).unwrap().collectible_type == CollectibleType::Coin {
-                level_scene_data.level_data.player.as_mut().unwrap().coins += 1;
+                let player = level_scene_data.level_data.player.as_mut().unwrap();
+                if player.power_ups.contains_key(&PlayerPowerUp::Coins2x) {
+                    player.coins += 2;
+                } else {
+                    player.coins += 1;
+                }
             }
             level_scene_data.level_data.collectibles.remove(i);
         }
