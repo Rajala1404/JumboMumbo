@@ -39,7 +39,7 @@ pub async fn render_level(level_scene_data: &mut LevelSceneData, textures: &BTre
             let enemies = async {
                 // Render enemies
                 for enemy in enemies {
-                    enemy.render(textures).await;
+                    enemy.render(textures, settings).await;
                 }
             };
 

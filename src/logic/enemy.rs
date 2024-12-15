@@ -2,13 +2,14 @@ use macroquad::math::{vec2, Vec2};
 use macroquad_platformer::{Actor, World};
 use std::collections::BTreeMap;
 use macroquad::prelude::{draw_texture_ex, get_frame_time, DrawTextureParams, Texture2D};
-use macroquad::color::{Color, RED, WHITE};
+use macroquad::color::{Color, GREEN, RED, WHITE};
+use macroquad::shapes::draw_rectangle;
 use macroquad::time::get_time;
 use crate::logic::collider::Collider;
 use crate::logic::player::Player;
 use crate::scenes::levels::structs::{Projectile, ProjectileOrigin};
 use crate::utils::enums::{Direction, TextureKey};
-use crate::utils::mathemann::plus_minus_range;
+use crate::utils::mathemann::{plus_minus_range, stretch_float_to};
 use crate::utils::structs::{Matrix, Settings};
 
 #[derive(PartialEq, Clone, Debug)]
@@ -332,8 +333,7 @@ impl Enemy {
         world.collide_check(self.world_collider, self.pos + vec2(-1.0, 0.0)) || world.collide_check(self.world_collider, self.pos + vec2(1.0, 0.0))
     }
 
-    // TODO: Implement health bar
-    pub async fn render(&self, textures: &BTreeMap<TextureKey, Vec<Texture2D>>) {
+    pub async fn render(&self, textures: &BTreeMap<TextureKey, Vec<Texture2D>>, settings: &Settings) {
         let texture = textures.get(&self.texture_key).unwrap().get(0).unwrap();
         draw_texture_ex(
             texture,
@@ -345,5 +345,20 @@ impl Enemy {
                 ..Default::default()
             },
         );
+
+        // Render health bar if health below 100%
+        if self.health < 1000 {
+            let c_width = self.colliders.get(0, 0).unwrap().rect.w;
+            let spacing = c_width / 16.0;
+            let width = stretch_float_to(self.health as f32, 1000.0, c_width - spacing * 2.0).await;
+            let width_full = stretch_float_to(1000.0, 1000.0, c_width - spacing * 2.0).await;
+            let height = 16.0 * settings.gui_scale;
+            let pos = vec2(self.pos.x + spacing, self.pos.y - height * 2.0);
+
+            // Full health (start health)
+            draw_rectangle(pos.x, pos.y, width_full, height, RED);
+            // Actual health
+            draw_rectangle(pos.x, pos.y, width, height, GREEN);
+        }
     }
 }
