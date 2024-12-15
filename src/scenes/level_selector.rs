@@ -1,7 +1,6 @@
 use macroquad::color::Color;
-use macroquad::input::is_key_down;
 use macroquad::math::Vec2;
-use macroquad::prelude::{screen_height, screen_width, KeyCode};
+use macroquad::prelude::{is_key_pressed, screen_height, screen_width, KeyCode};
 use macroquad::ui::root_ui;
 use crate::utils::enums::Scene;
 use crate::logic::level::Level;
@@ -15,7 +14,7 @@ pub async fn level_selector(scene: &mut Scene) {
         *scene = Scene::Level(Level::Level0)
     }
 
-    if is_key_down(KeyCode::Escape) {
+    if is_key_pressed(KeyCode::Escape) {
         *scene = Scene::MainMenu
     }
 }
