@@ -4,6 +4,7 @@ use macroquad::math::{vec2, Vec2};
 use macroquad::prelude::{draw_texture_ex, DrawTextureParams, Texture2D};
 use macroquad::time::get_time;
 use macroquad_platformer::{Solid, World};
+use crate::logic::collider::Collider;
 use crate::logic::projectile::{Projectile, ProjectileOrigin};
 use crate::utils::enums::{Direction, TextureKey};
 
@@ -18,6 +19,7 @@ pub struct Cannon {
     /// The projectile speed
     pub projectile_speed: f32,
     pub projectile_time: f64,
+    pub collider: Collider,
     pub _world_collider: Solid,
     pub texture_key: TextureKey,
     pub projectile_texture_key: TextureKey,
@@ -27,9 +29,10 @@ pub struct Cannon {
 impl Cannon {
     pub async fn new(pos: Vec2, size: Vec2, speed: f64, offset: f64, direction: Direction, projectile_speed: f32, projectile_time: f64, texture_key: TextureKey, projectile_texture_key: TextureKey, damage: i16, world: &mut World) -> Self {
         let last_shoot = get_time() + offset;
+        let collider = Collider::new_solid(pos, size.x, size.y, vec2(0.0, 0.0)).await;
         let _world_collider = world.add_solid(pos, size.x.round() as i32, size.y.round() as i32);
 
-        Self { pos, size, speed, direction, last_shoot, projectile_speed, projectile_time, _world_collider, texture_key, projectile_texture_key, damage }
+        Self { pos, size, speed, direction, last_shoot, projectile_speed, projectile_time, collider, _world_collider, texture_key, projectile_texture_key, damage }
     }
 
     pub async fn tick(&mut self, projectiles: &mut Vec<Projectile>) {

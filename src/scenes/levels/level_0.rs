@@ -8,7 +8,7 @@ use crate::logic::cannon::Cannon;
 use crate::logic::collectible::{Collectible, CollectibleType};
 use crate::logic::collider::Collider;
 use crate::logic::enemy::Enemy;
-use crate::logic::level::{Level, LevelData, LevelSceneData, PersistentLevelData};
+use crate::logic::level::{Level, LevelData, LevelSceneData, PersistentLevelData, Trigger};
 use crate::logic::platform::{Platform, PlatformTile};
 use crate::logic::player::{Player, PlayerPowerUp, PowerUp};
 use crate::utils::debugger;
@@ -47,11 +47,15 @@ pub async fn level_0(scene: &mut Scene, mut textures: &mut BTreeMap<SceneTexture
         return;
     }
 
-    level::tick_level(level_scene_data, settings).await;
+    let game_over = level_scene_data.level_data.triggers.get(&Trigger::GameOver).unwrap_or(&false).to_owned();
+
+    if !game_over { level::tick_level(level_scene_data, settings).await; }
     level::render_level(level_scene_data, &textures, settings).await;
 
-    debugger::check(&mut level_scene_data.level_data.triggers, &mut level_scene_data.level_data.trigger_locks).await;
-    debugger::render(level_scene_data, settings).await;
+    if !game_over {
+        debugger::check(&mut level_scene_data.level_data.triggers, &mut level_scene_data.level_data.trigger_locks).await;
+        debugger::render(level_scene_data, settings).await;
+    }
 }
 
 async fn layout(settings: &Settings) -> LevelSceneData {
@@ -241,7 +245,7 @@ async fn layout(settings: &Settings) -> LevelSceneData {
         0.1
     ).await);
 
-    let pos = vec2(400.0 * settings.gui_scale, 0.0);
+    let pos = vec2(300.0 * settings.gui_scale, 0.0);
     LevelSceneData {
         level_data: LevelData {
             start_time: get_time(),

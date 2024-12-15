@@ -48,7 +48,13 @@ impl Projectile {
     }
 
     pub async fn tick(&mut self, level_data: &LevelData) {
-        if !self.collider.collide_check_platform(&level_data.platforms, vec2(0.0, 0.0)).await.is_empty() || self.start_time + self.max_time < get_time(){
+        let colliding_with_platform = self.collider.collide_check_platform(&level_data.platforms, vec2(0.0, 0.0)).await.is_empty();
+        let colliding_with_enemy = self.collider.collide_check_enemy(&level_data.enemies, vec2(0.0, 0.0)).await.is_empty();
+        let colliding_with_player = if self.origin != ProjectileOrigin::Player { self.collider.touching_player(level_data.player.as_ref().unwrap()).await } else { false };
+
+        let colliding = !colliding_with_platform || !colliding_with_enemy || colliding_with_player;
+
+        if colliding || self.start_time + self.max_time < get_time() {
             self.active = false;
             self.deletable = true;
         } else {

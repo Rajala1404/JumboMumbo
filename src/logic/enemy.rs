@@ -211,7 +211,18 @@ impl Enemy {
                     result
                 };
 
-                if self.colliders.get(0, 0).unwrap().touching_player(player).await {
+                let touched_middle = {
+                    let mut result = false;
+                    for ((row, _), collider) in &self.colliders {
+                        if row < &0 || row > &0 { continue; }
+                        if collider.touching_player(player).await {
+                            result = true;
+                        }
+                    }
+                    result
+                };
+
+                if touched_middle {
 
                 } else if touched_right {
                     self.behavior.push(EnemyBehavior::Move(Direction::Right));

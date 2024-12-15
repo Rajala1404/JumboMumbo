@@ -65,6 +65,12 @@ pub async fn render(level_scene_data: &LevelSceneData, settings: &Settings) {
             }
         };
 
+        let cannons = async {
+            for cannon in &level_scene_data.level_data.cannons {
+                cannon.collider.debug_render(settings).await;
+            }
+        };
+
         let projectiles = async {
             for projectile in &level_scene_data.level_data.projectiles {
                 projectile.collider.debug_render(settings).await;
@@ -81,6 +87,7 @@ pub async fn render(level_scene_data: &LevelSceneData, settings: &Settings) {
         collectibles.await;
         enemies.await;
         platforms.await;
+        cannons.await;
         projectiles.await;
         power_ups.await;
     }
