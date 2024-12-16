@@ -60,7 +60,8 @@ impl Collider {
     /// This means if the Players [Collider] is inside the collider of [Self]
     pub async fn touching_player(&self, player: &Player) -> bool {
         let player_rect = player.collider_new.rect;
-        self.rect.overlaps(&player_rect).await
+        let below_rect = Rect::new(player_rect.x, player_rect.y + 1.0, player_rect.w, player_rect.h).await;
+        self.rect.overlaps(&player_rect).await || self.rect.overlaps(&below_rect).await
     }
 
     /// This functions checks if an enemy of the provided Vector collides with the [Collider] on the relative position arguments <br>

@@ -9,6 +9,7 @@ use stopwatch2::Stopwatch;
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::io::Write;
+use macroquad::math::{vec2, Vec2};
 use crate::logic::cannon::Cannon;
 use crate::logic::collectible::{Collectible, CollectibleType};
 use crate::logic::enemy::Enemy;
@@ -255,12 +256,21 @@ pub enum Trigger {
     ShowColliders,
     ShowFPS,
 
+    LevelCompleted,
     GameOver,
+
+    // Tutorial Trigger
+    TutorialWalking,
+    TutorialSpace,
+    TutorialCoins
 }
 
 #[derive(Clone)]
 pub struct LevelData {
     pub start_time: f64,
+
+    /// The zero position of the current canvas
+    pub zero: Vec2,
 
     pub level: Option<Level>,
     pub player: Option<Player>,
@@ -272,6 +282,7 @@ pub struct LevelData {
     pub power_ups: Vec<PowerUp>,
     /// Saves temporary triggers / settings
     pub triggers: BTreeMap<Trigger, bool>,
+    pub triggers_exec: BTreeMap<Trigger, f64>,
     pub trigger_locks: BTreeMap<Trigger, bool>
 }
 
@@ -319,6 +330,11 @@ impl LevelData {
         stopwatch.stop();
         println!("Saved level level score and updated stats! Took {}ms", stopwatch.elapsed().as_millis());
     }
+
+    pub async fn insert_trigger(&mut self, trigger: Trigger, value: bool) {
+        self.triggers.insert(trigger.to_owned(), value);
+        self.triggers_exec.insert(trigger, get_time());
+    }
 }
 
 /// Holds all data a level can possibly have
@@ -332,6 +348,8 @@ impl LevelSceneData {
         let level_data = LevelData {
             start_time: 0.0,
 
+            zero: vec2(0.0, 0.0),
+
             level: None,
             player: None,
             platforms: Vec::new(),
@@ -341,6 +359,7 @@ impl LevelSceneData {
             projectiles: Vec::new(),
             power_ups: Vec::new(),
             triggers: BTreeMap::new(),
+            triggers_exec: BTreeMap::new(),
             trigger_locks: BTreeMap::new()
         };
 

@@ -76,6 +76,7 @@ impl PlayerUIElement {
 
 #[derive(PartialEq, Clone)]
 pub struct Player {
+    pub pos: Vec2,
     pub health: i16,
     /// The total amount of kills
     pub kills: u32,
@@ -147,6 +148,7 @@ impl Player {
         ));
 
         Player {
+            pos,
             health: 1000,
             kills: 0,
             coins: 0,
@@ -305,6 +307,9 @@ impl Player {
     }
 
     pub async fn tick(&mut self, level_data: &mut LevelData, world: &World, settings: &Settings) {
+        let zero = vec2(world.actor_pos(self.camera_collider[0]).x, world.actor_pos(self.camera_collider[2]).y);
+        level_data.zero = zero;
+
         let enemies = &level_data.enemies;
         let colliding_enemies = self.collider_new.collide_check_enemy(enemies, vec2(0.0, 0.0)).await;
         if !colliding_enemies.is_empty() {
@@ -422,6 +427,7 @@ impl Player {
         world.move_v(self.collider, self.speed.y * get_frame_time());
 
         let pos = world.actor_pos(self.collider);
+        self.pos = pos;
         self.collider_new.change_pos(pos).await;
     }
 
