@@ -1,6 +1,7 @@
 mod utils;
 mod scenes;
 mod logic;
+mod ui;
 
 use std::collections::BTreeMap;
 use std::fs;
@@ -148,7 +149,7 @@ async fn main() {
         // Depending on the Scene does something else
         match scene {
             Scene::MainMenu => {
-                main_menu(&mut scene, &settings).await;
+                main_menu(&mut scene, &mut textures, &settings).await;
             }
             Scene::SettingsMenu => {
                 settings_menu(&mut scene, &mut settings, &mut temp_settings).await;

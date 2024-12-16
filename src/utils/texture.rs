@@ -41,6 +41,7 @@ pub async fn get_texture_path(key: TextureKey) -> String {
         TextureKey::PowerUps0 => String::from("./res/textures/items/power_ups_0"),
         TextureKey::Icons0 => String::from("./res/ui/icons_0"),
         TextureKey::Cannon0 => String::from("./res/textures/blocks/cannon_0"),
+        TextureKey::Button0 => String::from("./res/ui/button_0"),
         _ => {
             unimplemented!()
         }

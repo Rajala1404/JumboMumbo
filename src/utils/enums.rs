@@ -3,6 +3,7 @@ use crate::logic;
 
 #[derive(Ord, PartialOrd, Eq, PartialEq, Copy, Clone)]
 pub enum SceneTextureKey {
+    MainMenu,
     Level0,
 }
 
@@ -37,6 +38,8 @@ pub enum TextureKey {
     /// `2` is [Direction::Up]
     /// `3` is [Direction::Down]
     Cannon0,
+
+    Button0,
 }
 
 pub enum Scene {

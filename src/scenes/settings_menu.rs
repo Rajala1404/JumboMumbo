@@ -1,6 +1,7 @@
 use macroquad::color::Color;
 use macroquad::hash;
-use macroquad::math::{vec2, Vec2};
+use macroquad::input::{is_key_pressed, KeyCode};
+use macroquad::math::vec2;
 use macroquad::prelude::screen_height;
 use macroquad::ui::{root_ui, widgets};
 use macroquad::window::screen_width;
@@ -11,7 +12,7 @@ use crate::utils::text::draw_text_centered;
 pub async fn settings_menu(scene: &mut Scene, settings: &mut Settings, temp_settings: &mut TempSettings) {
     draw_text_centered("JumboMumbo", screen_height() / 8.0, 150.0 * settings.gui_scale, Color::from_rgba(255, 255, 255, 255)).await;
 
-    if root_ui().button(Some(Vec2 {x: 0.0, y: 0.0}), "X") {
+    if is_key_pressed(KeyCode::Escape) {
         *scene = Scene::MainMenu
     }
 
@@ -24,7 +25,7 @@ pub async fn settings_menu(scene: &mut Scene, settings: &mut Settings, temp_sett
         ).ui(ui, &mut temp_settings.settings.gui_scale);
     });
 
-    if root_ui().button(vec2(screen_width() - size.x, screen_height() - size.y / 4.0), "Apply") {
+    if root_ui().button(vec2(0.0, 0.0), "Apply") {
         *settings = temp_settings.clone().settings;
         settings.save().await;
     }
