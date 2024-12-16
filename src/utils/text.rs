@@ -6,7 +6,7 @@ pub async fn draw_text_center(text: &str, font_size: f32, color: Color) {
     draw_text(
         text,
         screen_width() / 2.0 - size.width / 2.0,
-        screen_height() / 2.0 + size.height / 2.0,
+        screen_height() / 2.0 + size.offset_y / 2.0,
         font_size,
         color
     );

@@ -152,10 +152,10 @@ async fn main() {
                 main_menu(&mut scene, &mut textures, &settings).await;
             }
             Scene::SettingsMenu => {
-                settings_menu(&mut scene, &mut settings, &mut temp_settings).await;
+                settings_menu(&mut scene, &mut textures, &mut settings, &mut temp_settings).await;
             }
             Scene::LevelSelector(_) => {
-                level_selector(&mut scene).await;
+                level_selector(&mut scene, &mut textures, &settings).await;
             }
             Scene::Level(_) => {
                 start_level(&mut scene, &mut textures, &mut level_scene_data, &mut persistent_level_data, &settings).await;

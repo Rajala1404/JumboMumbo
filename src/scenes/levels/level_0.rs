@@ -21,6 +21,16 @@ pub async fn level_0(scene: &mut Scene, mut textures: &mut BTreeMap<SceneTexture
     if textures.get(&SceneTextureKey::Level0).is_none() {
         load_textures(&mut textures).await;
     }
+
+    if is_key_down(KeyCode::Escape) {
+        *scene = Scene::LevelSelector(0);
+        level_scene_data.level_data.save(persistent_level_data, settings).await;
+        *level_scene_data = LevelSceneData::empty().await;
+        textures.remove(&SceneTextureKey::Level0);
+        set_default_camera();
+        return;
+    }
+
     let textures = textures.get(&SceneTextureKey::Level0).unwrap();
 
     // Load scene data for right level
@@ -85,15 +95,6 @@ pub async fn level_0(scene: &mut Scene, mut textures: &mut BTreeMap<SceneTexture
 
     level_data.player = Some(player);
     level_scene_data.level_data = level_data;
-
-
-    if is_key_down(KeyCode::Escape) {
-        *scene = Scene::LevelSelector(0);
-        level_scene_data.level_data.save(persistent_level_data, settings).await;
-        *level_scene_data = LevelSceneData::empty().await;
-        set_default_camera();
-        return;
-    }
 
     let won = level_scene_data.level_data.player.as_ref().unwrap().coins >= 2;
     let game_over = level_scene_data.level_data.triggers.get(&Trigger::GameOver).unwrap_or(&false).to_owned();

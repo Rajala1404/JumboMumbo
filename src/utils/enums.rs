@@ -4,6 +4,8 @@ use crate::logic;
 #[derive(Ord, PartialOrd, Eq, PartialEq, Copy, Clone)]
 pub enum SceneTextureKey {
     MainMenu,
+    LevelSelector,
+    SettingsMenu,
     Level0,
 }
 
