@@ -248,6 +248,7 @@ impl LevelScore {
 #[derive(Eq, PartialEq, Clone, Ord, PartialOrd, Serialize, Deserialize, Debug)]
 pub enum Level {
     Level0,
+    Level1,
 }
 
 #[derive(Eq, PartialEq, Clone, Ord, PartialOrd, Debug)]
@@ -287,6 +288,19 @@ pub struct LevelData {
 }
 
 impl LevelData {
+    pub async fn new(level: Level, player: Player, platforms: Vec<Platform>, collectibles: Vec<Collectible>, enemies: Vec<Enemy>, cannons: Vec<Cannon>, power_ups: Vec<PowerUp>) -> Self {
+        let start_time = get_time();
+        let zero = vec2(0.0, 0.0);
+        let level = Some(level);
+        let player = Some(player);
+        let projectiles = Vec::new();
+        let triggers = BTreeMap::new();
+        let triggers_exec = BTreeMap::new();
+        let trigger_locks = BTreeMap::new();
+
+        Self { start_time, zero, level, player, platforms, collectibles, enemies, cannons, projectiles, power_ups, triggers, triggers_exec, trigger_locks  }
+    }
+
     pub async fn save(&self, persistent_level_data: &mut PersistentLevelData, settings: &Settings) {
         let mut stopwatch = Stopwatch::default();
         println!("Saving level score and updating stats...");
@@ -344,6 +358,10 @@ pub struct LevelSceneData {
 }
 
 impl LevelSceneData {
+    pub async fn new(level_data: LevelData, world: World) -> Self {
+        Self { level_data, world }
+    }
+
     pub async fn empty() -> Self {
         let level_data = LevelData {
             start_time: 0.0,

@@ -6,7 +6,9 @@ pub enum SceneTextureKey {
     MainMenu,
     LevelSelector,
     SettingsMenu,
+
     Level0,
+    Level1,
 }
 
 /// All textures

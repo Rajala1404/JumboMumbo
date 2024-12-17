@@ -26,7 +26,7 @@ impl Platform {
     pub async fn floating(length: i32, tile_size: Vec2, texture_key: TextureKey, pos: Vec2, world: &mut World) -> Self {
         let mut tiles = vec![
             PlatformTile {
-                texture_key: TextureKey::Platform0,
+                texture_key,
                 texture_index: 0,
                 pos: vec2(0.0, 0.0),
             },
@@ -41,7 +41,7 @@ impl Platform {
         }
 
         tiles.push(PlatformTile{
-            texture_key: TextureKey::Platform0,
+            texture_key,
             texture_index: 2,
             pos: vec2(length as f32, 0.0),
         });
@@ -52,6 +52,83 @@ impl Platform {
             world.add_solid(pos, width as i32, tile_size.y as i32),
             pos,
             vec2(width, tile_size.y),
+            tile_size,
+            tiles,
+            vec2(0.0, 0.0)
+        ).await
+    }
+
+    pub async fn full(length: usize, height: usize, tile_size: Vec2, texture_key: TextureKey, pos: Vec2, world: &mut World) -> Self {
+        let mut tiles = vec![
+            // Top left corner
+            PlatformTile {
+                texture_key,
+                texture_index: 0,
+                pos: vec2(0.0, 0.0),
+            },
+            // Top right corner
+            PlatformTile {
+                texture_key,
+                texture_index: 2,
+                pos: vec2(length as f32 + 1.0, 0.0),
+            },
+            // Bottom left corner
+            PlatformTile {
+                texture_key,
+                texture_index: 6,
+                pos: vec2(0.0, height as f32 + 1.0),
+            },
+            // Bottom right corner
+            PlatformTile {
+                texture_key,
+                texture_index: 8,
+                pos: vec2(length as f32 + 1.0, height as f32 + 1.0),
+            }
+        ];
+
+        for i in 1..=length {
+            // Top border
+            tiles.push(PlatformTile {
+                texture_key,
+                texture_index: 1,
+                pos: vec2(i as f32, 0.0),
+            });
+            // Middle
+            for j in 1..=height {
+                tiles.push(PlatformTile {
+                    texture_key,
+                    texture_index: 4,
+                    pos: vec2(i as f32, j as f32),
+                })
+            }
+            // Bottom Border
+            tiles.push(PlatformTile {
+                texture_key,
+                texture_index: 7,
+                pos: vec2(i as f32, height as f32 + 1.0)
+            });
+        }
+
+        // Push left and right border
+        for i in 1..=height {
+            tiles.push(PlatformTile {
+                texture_key,
+                texture_index: 3,
+                pos: vec2(0.0, i as f32),
+            });
+            tiles.push(PlatformTile {
+                texture_key,
+                texture_index: 5,
+                pos: vec2(length as f32 + 1.0, i as f32),
+            })
+        }
+
+        let width = (length as f32 + 2.0) * tile_size.x;
+        let height = (height as f32 + 2.0) * tile_size.y;
+        Self::new(
+            world.add_solid(pos, width as i32, height as i32),
+            pos,
+            vec2(width, height),
             tile_size,
             tiles,
             vec2(0.0, 0.0)

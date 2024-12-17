@@ -39,6 +39,21 @@ pub async fn level_selector(scene: &mut Scene, textures: &mut BTreeMap<SceneText
             textures.remove(&SceneTextureKey::LevelSelector);
             return;
         }
+
+        let level_1_button = Button::new(
+            vec2(screen_width() / 2.0 - (400.0 * settings.gui_scale) / 2.0, screen_height() / 2.0 + (200.0 * settings.gui_scale)),
+            vec2(400.0, 200.0) * settings.gui_scale,
+            vec2(64.0, 64.0) * settings.gui_scale,
+            "Level 1".to_string(),
+            64.0 * settings.gui_scale,
+            TextureKey::Button0,
+        ).await;
+        level_1_button.render(textures.get(&SceneTextureKey::LevelSelector).unwrap()).await;
+        if level_1_button.is_released(MouseButton::Left).await {
+            *scene = Scene::Level(Level::Level1);
+            textures.remove(&SceneTextureKey::LevelSelector);
+            return;
+        }
     }
 }
 
