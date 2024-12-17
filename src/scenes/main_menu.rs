@@ -73,8 +73,6 @@ async fn load_textures() -> BTreeMap<TextureKey, Vec<Texture2D>> {
         load_textures_from_tile_map(path)
     };
 
-
-
     result.insert(TextureKey::Button0, button_textures.await);
 
     stopwatch.stop();

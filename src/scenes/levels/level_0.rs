@@ -3,7 +3,6 @@ use std::collections::BTreeMap;
 use crate::Settings;
 use macroquad::prelude::*;
 use macroquad_platformer::World;
-use stopwatch2::Stopwatch;
 use crate::logic::collectible::{Collectible, CollectibleType};
 use crate::logic::collider::Collider;
 use crate::logic::level::{Level, LevelData, LevelSceneData, PersistentLevelData, Trigger};
@@ -12,14 +11,21 @@ use crate::logic::player::{Player, PlayerUIElementType};
 use crate::utils::debugger;
 use crate::utils::enums::{Animation, AnimationType, Scene, SceneTextureKey, TextureKey};
 use crate::utils::text::{draw_text_center, draw_text_centered};
-use crate::utils::texture::{get_texture_path, load_textures_from_tile_map};
+use crate::utils::texture::load_level_textures;
 
-pub async fn level_0(scene: &mut Scene, mut textures: &mut BTreeMap<SceneTextureKey, BTreeMap<TextureKey, Vec<Texture2D>>>, level_scene_data: &mut LevelSceneData, persistent_level_data: &mut PersistentLevelData, settings: &Settings) {
+pub async fn level_0(scene: &mut Scene, textures: &mut BTreeMap<SceneTextureKey, BTreeMap<TextureKey, Vec<Texture2D>>>, level_scene_data: &mut LevelSceneData, persistent_level_data: &mut PersistentLevelData, settings: &Settings) {
     clear_background(DARKBLUE);
 
     // Load textures if not loaded already
     if textures.get(&SceneTextureKey::Level0).is_none() {
-        load_textures(&mut textures).await;
+        let keys = [
+            TextureKey::Platform0,
+            TextureKey::Player,
+            TextureKey::Coin0,
+            TextureKey::Icons0,
+            TextureKey::Projectile0
+        ].to_vec();
+        textures.insert(SceneTextureKey::Level0, load_level_textures("Tutorial", keys).await);
     }
 
     if is_key_down(KeyCode::Escape) {
@@ -246,66 +252,4 @@ async fn layout(settings: &Settings) -> LevelSceneData {
             trigger_locks: BTreeMap::new() },
         world
     }
-}
-
-async fn load_textures(textures: &mut BTreeMap<SceneTextureKey, BTreeMap<TextureKey, Vec<Texture2D>>>) {
-    let mut stopwatch = Stopwatch::default();
-    println!("Loading textures...");
-    stopwatch.start();
-
-    let mut result = BTreeMap::new();
-    // Load player textures
-    let player = {
-        let mut result = Vec::new();
-
-        let player_walk_left = load_texture("res/textures/player/player_walk_left.png").await.unwrap();
-        // FilterMode is set to Nearest so it doesn't pixelate when scaling
-        player_walk_left.set_filter(FilterMode::Nearest);
-
-        let player_walk_right = load_texture("res/textures/player/player_walk_right.png").await.unwrap();
-        player_walk_right.set_filter(FilterMode::Nearest);
-
-        result.push(player_walk_left);
-        result.push(player_walk_right);
-
-        result
-    };
-    result.insert(TextureKey::Player, player);
-
-
-    let platform_0 = {
-        let path = get_texture_path(TextureKey::Platform0).await;
-        load_textures_from_tile_map(path).await
-    };
-    result.insert(TextureKey::Platform0, platform_0);
-
-    let coin_0 = {
-        let path = get_texture_path(TextureKey::Coin0).await;
-        load_textures_from_tile_map(path).await
-    };
-    result.insert(TextureKey::Coin0, coin_0);
-
-    let power_ups_0 = {
-        let path = get_texture_path(TextureKey::PowerUps0).await;
-        load_textures_from_tile_map(path).await
-    };
-    result.insert(TextureKey::PowerUps0, power_ups_0);
-
-    let icons_0 =  {
-        let path = get_texture_path(TextureKey::Icons0).await;
-        load_textures_from_tile_map(path).await
-    };
-    result.insert(TextureKey::Icons0, icons_0);
-
-    let cannons_0 = {
-        let path = get_texture_path(TextureKey::Cannon0).await;
-        load_textures_from_tile_map(path).await
-    };
-    result.insert(TextureKey::Cannon0, cannons_0);
-
-    // Insert result into the global texture map
-    textures.insert(SceneTextureKey::Level0, result);
-
-    stopwatch.stop();
-    println!("Loaded textures! Took: {}ms", stopwatch.elapsed().as_millis());
 }

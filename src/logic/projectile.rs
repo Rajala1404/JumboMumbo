@@ -5,6 +5,7 @@ use macroquad::color::WHITE;
 use crate::logic::collider::Collider;
 use crate::logic::level::LevelData;
 use crate::utils::enums::TextureKey;
+use crate::utils::mathemann::vec2_to_degrees;
 
 #[derive(PartialEq, Clone, Debug)]
 pub struct Projectile {
@@ -67,12 +68,12 @@ impl Projectile {
         self.collider.change_pos(self.pos).await;
     }
 
-    // TODO: Implement Animation
     pub async fn render(&self, textures: &BTreeMap<TextureKey, Vec<Texture2D>>) {
         draw_texture_ex(
             &textures.get(&self.texture_key).unwrap().get(0).unwrap(), self.pos.x, self.pos.y, WHITE,
             DrawTextureParams {
                 dest_size: Some(vec2(self.size.x, self.size.y)),
+                rotation: vec2_to_degrees(self.speed.normalize()).await,
                 ..Default::default()
             },
         );

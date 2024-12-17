@@ -3,27 +3,37 @@ use macroquad::camera::set_default_camera;
 use macroquad::color::{BLACK, DARKBLUE, WHITE};
 use macroquad::input::{is_key_down, KeyCode};
 use macroquad::math::vec2;
-use macroquad::texture::{load_texture, FilterMode, Texture2D};
+use macroquad::text::draw_text;
+use macroquad::texture::Texture2D;
 use macroquad::window::{clear_background, screen_height};
 use macroquad_platformer::World;
-use stopwatch2::Stopwatch;
 use crate::logic::collectible::{Collectible, CollectibleType};
+use crate::logic::enemy::Enemy;
 use crate::logic::level;
 use crate::logic::level::{Level, LevelData, LevelSceneData, PersistentLevelData, Trigger};
 use crate::logic::platform::Platform;
-use crate::logic::player::Player;
+use crate::logic::player::{Player, PlayerPowerUp, PowerUp};
 use crate::utils::debugger;
 use crate::utils::enums::{Animation, AnimationType, Scene, SceneTextureKey, TextureKey};
 use crate::utils::structs::Settings;
 use crate::utils::text::{draw_text_center, draw_text_centered};
-use crate::utils::texture::{get_texture_path, load_textures_from_tile_map};
+use crate::utils::texture::load_level_textures;
 
-pub async fn level_1(scene: &mut Scene, mut textures: &mut BTreeMap<SceneTextureKey, BTreeMap<TextureKey, Vec<Texture2D>>>, level_scene_data: &mut LevelSceneData, persistent_level_data: &mut PersistentLevelData, settings: &Settings) {
+pub async fn level_1(scene: &mut Scene, textures: &mut BTreeMap<SceneTextureKey, BTreeMap<TextureKey, Vec<Texture2D>>>, level_scene_data: &mut LevelSceneData, persistent_level_data: &mut PersistentLevelData, settings: &Settings) {
     clear_background(DARKBLUE);
 
     // Load textures if not loaded already
     if textures.get(&SceneTextureKey::Level1).is_none() {
-        load_textures(&mut textures).await;
+        let keys = [
+            TextureKey::Platform0,
+            TextureKey::PowerUps0,
+            TextureKey::Player,
+            TextureKey::Icons0,
+            TextureKey::Coin0,
+            TextureKey::Enemy0,
+            TextureKey::Projectile0
+        ].to_vec();
+        textures.insert(SceneTextureKey::Level1, load_level_textures("Level 1", keys).await);
     }
 
     // Load scene data for right level
@@ -51,7 +61,7 @@ pub async fn level_1(scene: &mut Scene, mut textures: &mut BTreeMap<SceneTexture
     level_data.player = Some(player);
     level_scene_data.level_data = level_data;
 
-    let won = level_scene_data.level_data.player.as_ref().unwrap().coins >= 2;
+    let won = level_scene_data.level_data.enemies.is_empty();
     let game_over = level_scene_data.level_data.triggers.get(&Trigger::GameOver).unwrap_or(&false).to_owned();
 
     if !game_over && !won { level::tick_level(level_scene_data, settings).await; }
@@ -60,6 +70,15 @@ pub async fn level_1(scene: &mut Scene, mut textures: &mut BTreeMap<SceneTexture
     if !game_over && !won {
         debugger::check(&mut level_scene_data.level_data.triggers, &mut level_scene_data.level_data.trigger_locks).await;
         debugger::render(level_scene_data, settings).await;
+    }
+
+    { // Tutorial shoot text
+        let pos = vec2(354.0 * (128.0 * settings.gui_scale), -7.0 * (128.0 * settings.gui_scale));
+        draw_text("Shoot with Q and E or left click", pos.x, pos.y, 48.0 * settings.gui_scale, WHITE);
+    }
+
+    if level_scene_data.level_data.player.as_ref().unwrap().pos.y > 0.0 * (128.0 * settings.gui_scale) {
+        level_scene_data.level_data.player.as_mut().unwrap().health = 0;
     }
 
     if won {
@@ -79,16 +98,15 @@ async fn layout(settings: &Settings) -> LevelSceneData {
 
     let mut platforms = Vec::new();
     let mut collectibles = Vec::new();
-    let enemies = Vec::new();
+    let mut enemies = Vec::new();
     let cannons = Vec::new();
-    let power_ups = Vec::new();
+    let mut power_ups = Vec::new();
 
-    platforms.push(Platform::full(
-        30,
-        2,
+    platforms.push(Platform::floating(
+        3,
         size,
         TextureKey::Platform0,
-        vec2(0.0, 0.0),
+        vec2(width * -1.5, 0.0),
         &mut world
     ).await);
 
@@ -100,16 +118,143 @@ async fn layout(settings: &Settings) -> LevelSceneData {
         &mut world
     ).await);
 
+    power_ups.push(
+        PowerUp::new(
+            PlayerPowerUp::Coins2x,
+            120.0,
+            vec2(size.x *  6.5, size.y * -4.5),
+            size,
+            TextureKey::PowerUps0,
+            (41, 63),
+            0.1
+        ).await
+    );
+
+    platforms.push(Platform::floating(
+        2,
+        size,
+        TextureKey::Platform0,
+        vec2(size.x * 12.0, size.y * -4.5),
+        &mut world
+    ).await);
+
     collectibles.push(Collectible::new(
         CollectibleType::Coin,
-        vec2(size.x *  6.5, size.y * -4.5),
+        vec2(size.x * 13.0, size.y * -6.5),
         size,
         TextureKey::Coin0,
         Animation::new(AnimationType::Cycle(0, 5, 0.1)),
         nv2
     ).await);
 
-    let pos = vec2(0.0, height * -20.0);
+    platforms.push(Platform::floating(
+        2,
+        size,
+        TextureKey::Platform0,
+        vec2(size.x * 21.0, size.y * -2.5),
+        &mut world
+    ).await);
+
+    collectibles.push(Collectible::new(
+        CollectibleType::Coin,
+        vec2(size.x * 22.0, size.y * -4.5),
+        size,
+        TextureKey::Coin0,
+        Animation::new(AnimationType::Cycle(0, 5, 0.1)),
+        nv2
+    ).await);
+
+    platforms.push(Platform::floating(
+        4,
+        size,
+        TextureKey::Platform0,
+        vec2(size.x * 28.0, size.y * -4.0),
+        &mut world
+    ).await);
+
+    collectibles.push(Collectible::new(
+        CollectibleType::Coin,
+        vec2(size.x * 28.0, size.y * -6.0),
+        size,
+        TextureKey::Coin0,
+        Animation::new(AnimationType::Cycle(0, 5, 0.1)),
+        nv2
+    ).await);
+
+    power_ups.push(PowerUp::new(
+        PlayerPowerUp::SpeedBoost,
+        25.0,
+        vec2(size.x * 30.0, size.y * -6.0),
+        size,
+        TextureKey::PowerUps0,
+        (18, 40),
+        0.1
+    ).await);
+
+    power_ups.push(PowerUp::new(
+        PlayerPowerUp::JumpBoost,
+        25.0,
+        vec2(size.x * 32.0, size.y * -6.0),
+        size,
+        TextureKey::PowerUps0,
+        (0, 17),
+        0.1
+    ).await);
+
+    for i in  (0..=306).step_by(18) {
+        let pos = vec2(size.x * (i + 40) as f32, size.y * -6.0);
+        platforms.push(Platform::floating(
+            2,
+            size,
+            TextureKey::Platform0,
+            pos,
+            &mut world
+        ).await);
+        collectibles.push(Collectible::new(
+            CollectibleType::Coin,
+            pos + vec2(size.x * 1.0, size.y * -2.0),
+            size,
+            TextureKey::Coin0,
+            Animation::new(AnimationType::Cycle(0, 5, 0.1)),
+            nv2
+        ).await)
+    }
+
+    platforms.push(Platform::floating(
+        4,
+        size,
+        TextureKey::Platform0,
+        vec2(size.x * 354.0, size.y * -4.5),
+        &mut world
+    ).await);
+
+    power_ups.push(PowerUp::new(
+        PlayerPowerUp::Damage2x,
+        60.0,
+        vec2(size.x * 356.0, size.y * -6.5),
+        size,
+        TextureKey::PowerUps0,
+        (64, 83),
+        0.1
+    ).await);
+
+    platforms.push(Platform::floating(
+        8,
+        size,
+        TextureKey::Platform0,
+        vec2(size.x * 364.0, size.y * -6.0),
+        &mut world
+    ).await);
+
+    enemies.push(Enemy::new(
+        vec2(size.x * 364.0, size.y * -7.5),
+        -50,
+        &mut world,
+        size,
+        TextureKey::Enemy0
+    ).await);
+
+    let pos = vec2(0.0, height * -10.0);
     LevelSceneData::new(
         LevelData::new(
             Level::Level1,
@@ -122,65 +267,4 @@ async fn layout(settings: &Settings) -> LevelSceneData {
         ).await,
         world
     ).await
-}
-async fn load_textures(textures: &mut BTreeMap<SceneTextureKey, BTreeMap<TextureKey, Vec<Texture2D>>>) {
-    let mut stopwatch = Stopwatch::default();
-    println!("Loading textures for Level 1...");
-    stopwatch.start();
-
-    let mut result = BTreeMap::new();
-    // Load player textures
-    let player = {
-        let mut result = Vec::new();
-
-        let player_walk_left = load_texture("res/textures/player/player_walk_left.png").await.unwrap();
-        // FilterMode is set to Nearest so it doesn't pixelate when scaling
-        player_walk_left.set_filter(FilterMode::Nearest);
-
-        let player_walk_right = load_texture("res/textures/player/player_walk_right.png").await.unwrap();
-        player_walk_right.set_filter(FilterMode::Nearest);
-
-        result.push(player_walk_left);
-        result.push(player_walk_right);
-
-        result
-    };
-    result.insert(TextureKey::Player, player);
-
-
-    let platform_0 = {
-        let path = get_texture_path(TextureKey::Platform0).await;
-        load_textures_from_tile_map(path).await
-    };
-    result.insert(TextureKey::Platform0, platform_0);
-
-    let coin_0 = {
-        let path = get_texture_path(TextureKey::Coin0).await;
-        load_textures_from_tile_map(path).await
-    };
-    result.insert(TextureKey::Coin0, coin_0);
-
-    let power_ups_0 = {
-        let path = get_texture_path(TextureKey::PowerUps0).await;
-        load_textures_from_tile_map(path).await
-    };
-    result.insert(TextureKey::PowerUps0, power_ups_0);
-
-    let icons_0 =  {
-        let path = get_texture_path(TextureKey::Icons0).await;
-        load_textures_from_tile_map(path).await
-    };
-    result.insert(TextureKey::Icons0, icons_0);
-
-    let cannons_0 = {
-        let path = get_texture_path(TextureKey::Cannon0).await;
-        load_textures_from_tile_map(path).await
-    };
-    result.insert(TextureKey::Cannon0, cannons_0);
-
-    // Insert result into the global texture map
-    textures.insert(SceneTextureKey::Level1, result);
-
-    stopwatch.stop();
-    println!("Loaded textures for Level 1! Took: {}ms", stopwatch.elapsed().as_millis());
 }

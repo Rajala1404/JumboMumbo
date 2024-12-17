@@ -1,6 +1,6 @@
 use std::collections::BTreeMap;
 use macroquad::camera::set_camera;
-use macroquad::color::{Color, RED, WHITE};
+use macroquad::color::{Color, GREEN, RED, WHITE};
 use macroquad::input::{is_key_down, is_key_pressed, is_mouse_button_pressed, mouse_position, KeyCode, MouseButton};
 use macroquad::math::{vec2, Vec2};
 use macroquad::prelude::{draw_texture_ex, get_frame_time, screen_height, Camera2D, DrawTextureParams, Rect, Texture2D};
@@ -14,7 +14,7 @@ use crate::logic::level::{LevelData, Trigger};
 use crate::logic::projectile::{Projectile, ProjectileOrigin};
 use crate::utils::structs::Settings;
 use crate::utils::enums::{Animation, AnimationType, Direction, TextureKey};
-use crate::utils::mathemann::point_to_point_direction_with_speed;
+use crate::utils::mathemann::{point_to_point_direction_with_speed, stretch_float_to};
 
 // This file contains everything that is for the player
 #[derive(PartialEq, Clone, Debug)]
@@ -74,7 +74,7 @@ impl PlayerUIElement {
 
 }
 
-#[derive(PartialEq, Clone)]
+#[derive(PartialEq, Clone, Debug)]
 pub struct Player {
     pub pos: Vec2,
     pub health: i16,
@@ -91,7 +91,8 @@ pub struct Player {
     pub width: f32,
     pub height: f32,
     /// 0: Left <br>
-    /// 1: Right
+    /// 1: Right <br>
+    /// 2: Straight
     pub state: i8,
     pub collider: Actor,
     pub collider_new: Collider,
@@ -107,7 +108,7 @@ pub struct Player {
     pub power_ups_exec: BTreeMap<PlayerPowerUp, f64>,
 }
 
-#[derive(PartialEq, Eq, Clone, Ord, PartialOrd, Copy)]
+#[derive(PartialEq, Eq, Clone, Ord, PartialOrd, Copy, Debug)]
 pub enum PlayerTrigger {
     DamageOverlay,
     DamageCooldown,
@@ -200,7 +201,6 @@ impl Player {
             self.speed.y = 0.0;
         }
 
-        // 1 = Left, 2 = Right
         let mut direction = 0;
 
 
@@ -225,6 +225,7 @@ impl Player {
         } else {
             // Resets the speed if nothing is pressed
             self.speed.x = 0.0;
+            self.state = 2;
         }
 
         if is_key_down(KeyCode::Space) {
@@ -365,7 +366,7 @@ impl Player {
                     size,
                     damage,
                     4.0,
-                    TextureKey::Coin0, ProjectileOrigin::Player, movement_vector).await;
+                    TextureKey::Projectile0, ProjectileOrigin::Player, movement_vector).await;
 
                 self.triggers.insert(PlayerTrigger::ShootTimeout, true);
                 self.triggers_exec.insert(PlayerTrigger::ShootTimeout, get_time());
@@ -382,7 +383,7 @@ impl Player {
                     size,
                     damage,
                     4.0,
-                    TextureKey::Coin0, ProjectileOrigin::Player, movement_vector).await;
+                    TextureKey::Projectile0, ProjectileOrigin::Player, movement_vector).await;
 
                 self.triggers.insert(PlayerTrigger::ShootTimeout, true);
                 self.triggers_exec.insert(PlayerTrigger::ShootTimeout, get_time());
@@ -399,7 +400,7 @@ impl Player {
                     size,
                     damage,
                     4.0,
-                    TextureKey::Coin0, ProjectileOrigin::Player, movement_vector).await;
+                    TextureKey::Projectile0, ProjectileOrigin::Player, movement_vector).await;
 
                 self.triggers.insert(PlayerTrigger::ShootTimeout, true);
                 self.triggers_exec.insert(PlayerTrigger::ShootTimeout, get_time());
@@ -510,7 +511,9 @@ impl Player {
 
         // Draw Health bar
         let health_height = 32.0 * settings.gui_scale;
-        draw_rectangle(zero.x, zero.y, (self.health as f32 / 2.0) * settings.gui_scale, health_height, RED);
+        draw_rectangle(zero.x, zero.y, screen_width() / 4.0, health_height, RED);
+        let width = stretch_float_to(self.health as f32, 1000.0, screen_width() / 4.0).await;
+        draw_rectangle(zero.x, zero.y, width, health_height, GREEN);
 
         // Draw UI Elements
         let mut current_height = health_height + 8.0 * settings.gui_scale;

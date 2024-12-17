@@ -9,12 +9,15 @@ pub enum SceneTextureKey {
 
     Level0,
     Level1,
+    Level2,
 }
 
 /// All textures
 #[derive(Ord, PartialOrd, Eq, PartialEq, Copy, Clone, Debug)]
 pub enum TextureKey {
     Player,
+    Enemy0,
+    Projectile0,
 
     // Platforms
     Platform0,

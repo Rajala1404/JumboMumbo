@@ -1,5 +1,5 @@
 use std::collections::BTreeMap;
-use macroquad::color::{DARKPURPLE, GRAY, WHITE};
+use macroquad::color::{DARKPURPLE, WHITE};
 use macroquad::input::{is_key_down, is_key_released, KeyCode};
 use macroquad::prelude::{screen_height, screen_width};
 use macroquad::shapes::draw_rectangle_lines;
@@ -93,10 +93,9 @@ pub async fn render(level_scene_data: &LevelSceneData, settings: &Settings) {
     }
 
     if is_active(Trigger::ShowFPS, triggers).await {
-        let camera_pos = world.actor_pos(level_scene_data.level_data.player.as_ref().unwrap().camera_collider[0]);
         let text = get_fps().to_string();
         let size = measure_text(&text, None, (32.0 * settings.gui_scale) as _, 1.0);
-        draw_text(&text, camera_pos.x, size.height, 32.0 * settings.gui_scale, GRAY);
+        draw_text(&text, level_scene_data.level_data.zero.x, level_scene_data.level_data.zero.y + size.offset_y, 32.0 * settings.gui_scale, WHITE);
     }
 }
 

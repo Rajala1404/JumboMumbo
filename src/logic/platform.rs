@@ -6,7 +6,7 @@ use macroquad::color::WHITE;
 use crate::logic::collider::Collider;
 use crate::utils::enums::TextureKey;
 
-#[derive(PartialEq, Clone)]
+#[derive(PartialEq, Clone, Debug)]
 pub struct Platform {
     pub collider: Solid,
     pub collider_new: Collider,
@@ -155,7 +155,7 @@ impl Platform {
     }
 }
 
-#[derive(PartialEq, Clone)]
+#[derive(PartialEq, Clone, Debug)]
 pub struct PlatformTile {
     pub texture_key: TextureKey,
     /// The usize is the Index of the texture inside the TileMap. <br>

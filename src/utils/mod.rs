@@ -4,3 +4,5 @@ pub mod debugger;
 pub mod enums;
 pub mod texture;
 pub mod structs;
+pub mod mapper;
+pub mod loading;

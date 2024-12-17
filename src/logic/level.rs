@@ -145,20 +145,26 @@ pub async fn tick_level(level_scene_data: &mut LevelSceneData, settings: &Settin
 
         for (i, projectile) in projectiles.iter_mut().enumerate() {
             projectile.tick(&level_data).await;
-            level_data.projectiles.remove(i);
-            level_data.projectiles.insert(i, projectile.clone());
 
             if projectile.deletable {
                 projectiles_to_remove.push(i);
             }
         }
-        level_scene_data.level_data = level_data;
 
-        for projectile in projectiles_to_remove {
-            if projectile < level_scene_data.level_data.projectiles.len() {
-                level_scene_data.level_data.projectiles.remove(projectile);
+        let new_projectiles = {
+            let mut result = Vec::new();
+
+            for (i, projectile) in projectiles.iter().enumerate() {
+                if !projectiles_to_remove.contains(&i)  {
+                    result.push(projectile.to_owned());
+                }
             }
-        }
+
+            result
+        };
+
+        level_data.projectiles = new_projectiles.to_owned();
+        level_scene_data.level_data = level_data;
     }
     { // Tick power ups
         let player = level_scene_data.level_data.player.as_mut().unwrap();
@@ -249,6 +255,7 @@ impl LevelScore {
 pub enum Level {
     Level0,
     Level1,
+    Level2,
 }
 
 #[derive(Eq, PartialEq, Clone, Ord, PartialOrd, Debug)]
