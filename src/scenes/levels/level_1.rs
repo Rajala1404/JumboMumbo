@@ -7,12 +7,13 @@ use macroquad::texture::{load_texture, FilterMode, Texture2D};
 use macroquad::window::{clear_background, screen_height};
 use macroquad_platformer::World;
 use stopwatch2::Stopwatch;
+use crate::logic::collectible::{Collectible, CollectibleType};
 use crate::logic::level;
 use crate::logic::level::{Level, LevelData, LevelSceneData, PersistentLevelData, Trigger};
 use crate::logic::platform::Platform;
 use crate::logic::player::Player;
 use crate::utils::debugger;
-use crate::utils::enums::{Scene, SceneTextureKey, TextureKey};
+use crate::utils::enums::{Animation, AnimationType, Scene, SceneTextureKey, TextureKey};
 use crate::utils::structs::Settings;
 use crate::utils::text::{draw_text_center, draw_text_centered};
 use crate::utils::texture::{get_texture_path, load_textures_from_tile_map};
@@ -83,19 +84,36 @@ async fn layout(settings: &Settings) -> LevelSceneData {
     let power_ups = Vec::new();
 
     platforms.push(Platform::full(
-        5,
+        30,
         2,
         size,
         TextureKey::Platform0,
-        vec2(0.0, height * 4.0),
+        vec2(0.0, 0.0),
         &mut world
     ).await);
 
-    let pos = vec2(0.0, 0.0);
+    platforms.push(Platform::floating(
+        3,
+        size,
+        TextureKey::Platform0,
+        vec2(size.x * 5.0, size.y * -2.5),
+        &mut world
+    ).await);
+
+    collectibles.push(Collectible::new(
+        CollectibleType::Coin,
+        vec2(size.x *  6.5, size.y * -4.5),
+        size,
+        TextureKey::Coin0,
+        Animation::new(AnimationType::Cycle(0, 5, 0.1)),
+        nv2
+    ).await);
+
+    let pos = vec2(0.0, height * -20.0);
     LevelSceneData::new(
         LevelData::new(
             Level::Level1,
-            Player::new(size.x, size.y, vec2(pos.x, nv2.y), 0, &mut world).await,
+            Player::new(size.x, size.y, pos, 0, &mut world).await,
             platforms,
             collectibles,
             enemies,

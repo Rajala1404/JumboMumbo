@@ -1,14 +1,14 @@
 use std::collections::BTreeMap;
-use macroquad::color::Color;
-use macroquad::hash;
+use macroquad::color::{Color, WHITE};
 use macroquad::input::{is_key_pressed, KeyCode, MouseButton};
 use macroquad::math::vec2;
-use macroquad::prelude::{screen_height, Texture2D};
-use macroquad::ui::{root_ui, widgets};
+use macroquad::prelude::{measure_text, screen_height, Texture2D};
+use macroquad::text::draw_text;
 use macroquad::window::screen_width;
 use stopwatch2::Stopwatch;
 use crate::ui::buttons::Button;
 use crate::utils::enums::{Scene, SceneTextureKey, TextureKey};
+use crate::utils::mathemann::round;
 use crate::utils::structs::{Settings, TempSettings};
 use crate::utils::text::draw_text_centered;
 use crate::utils::texture::{get_texture_path, load_textures_from_tile_map};
@@ -28,24 +28,60 @@ pub async fn settings_menu(scene: &mut Scene, textures: &mut BTreeMap<SceneTextu
 
     let textures = textures.get(&SceneTextureKey::SettingsMenu).unwrap();
 
-    let size = vec2(1000.0 * settings.gui_scale, 1000.0 * settings.gui_scale);
-    let pos = vec2(screen_width() / 2.0 - size.x / 2.0, screen_height() / 2.0 - size.y / 2.0);
-    root_ui().window(hash!(), pos, size, |ui| {
-        widgets::Slider::new(
-            hash!(),
-            0.1..4.0
-        ).ui(ui, &mut temp_settings.settings.gui_scale);
-    });
+    { // GUI Scale
+        let size = vec2(64.0, 64.0) * settings.gui_scale;
+        let border_size = vec2(16.0, 16.0) * settings.gui_scale;
+        let y = screen_width() / 4.0;
+        let plus_button = Button::new(
+            vec2(screen_width() - size.x, y),
+            size,
+            border_size,
+            "+".to_string(),
+            64.0 * settings.gui_scale,
+            TextureKey::Button0
+        ).await;
+        let minus_button = Button::new(
+            vec2(screen_width() - size.x * 2.25, y),
+            size,
+            border_size,
+            "-".to_string(),
+            64.0 * settings.gui_scale,
+            TextureKey::Button0
+        ).await;
+
+        plus_button.render(textures).await;
+        minus_button.render(textures).await;
+
+        if plus_button.is_released(MouseButton::Left).await && settings.gui_scale < 4.0 {
+            temp_settings.settings.gui_scale += 0.1;
+            temp_settings.settings.gui_scale = round(temp_settings.settings.gui_scale, 1).await
+        }
+        if minus_button.is_released(MouseButton::Left).await && settings.gui_scale > 0.2 {
+            temp_settings.settings.gui_scale -= 0.1;
+            temp_settings.settings.gui_scale = round(temp_settings.settings.gui_scale, 1).await
+        }
+
+        let text = format!("GUI Scale: {}", temp_settings.settings.gui_scale);
+        let font_size = 64.0 * settings.gui_scale;
+        let text_measures = measure_text(&text, None, font_size as _, 1.0);
+        draw_text(
+            &text,
+            0.0,
+            y + text_measures.offset_y,
+            font_size as _,
+            WHITE
+        );
+    }
 
     { // Apply Button
-        let size = vec2(512.0, 256.0) * settings.gui_scale;
+        let size = vec2(256.0, 128.0) * settings.gui_scale;
         let pos = vec2(screen_width(), screen_height()) - size;
         let button = Button::new(
             pos,
             size,
-            vec2(64.0, 64.0) * settings.gui_scale,
+            vec2(32.0, 32.0) * settings.gui_scale,
             "Apply".to_string(),
-            128.0 * settings.gui_scale,
+            64.0 * settings.gui_scale,
             TextureKey::Button0,
         ).await;
 

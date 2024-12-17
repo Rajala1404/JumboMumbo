@@ -21,3 +21,8 @@ pub async fn point_to_point_direction_with_speed(p0: Vec2, p1: Vec2, speed: f32)
     let vec =diff_vec.normalize();
     vec * speed
 }
+
+pub async fn round(x: f32, decimals: u32) -> f32 {
+    let y = 10i32.pow(decimals) as f32;
+    (x * y).round() / y
+}
