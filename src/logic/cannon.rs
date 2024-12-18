@@ -30,7 +30,7 @@ impl Cannon {
     pub async fn new(pos: Vec2, size: Vec2, speed: f64, offset: f64, direction: Direction, projectile_speed: f32, projectile_time: f64, texture_key: TextureKey, projectile_texture_key: TextureKey, damage: i16, world: &mut World) -> Self {
         let last_shoot = get_time() + offset;
         let collider = Collider::new_solid(pos, size.x, size.y, vec2(0.0, 0.0)).await;
-        let _world_collider = world.add_solid(pos, size.x.round() as i32, size.y.round() as i32);
+        let _world_collider = world.add_solid(pos, size.x as i32, size.y as i32);
 
         Self { pos, size, speed, direction, last_shoot, projectile_speed, projectile_time, collider, _world_collider, texture_key, projectile_texture_key, damage }
     }
