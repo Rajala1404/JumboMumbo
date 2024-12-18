@@ -1,7 +1,7 @@
 use std::collections::BTreeMap;
 use macroquad::camera::set_default_camera;
 use macroquad::color::{BLACK, DARKBLUE, WHITE};
-use macroquad::input::{is_key_down, KeyCode};
+use macroquad::input::{is_key_down, is_key_pressed, KeyCode};
 use macroquad::math::vec2;
 use macroquad::text::draw_text;
 use macroquad::texture::Texture2D;
@@ -41,13 +41,18 @@ pub async fn level_1(scene: &mut Scene, textures: &mut BTreeMap<SceneTextureKey,
         *level_scene_data = layout(settings).await;
     }
 
-    if is_key_down(KeyCode::Escape) {
+    if is_key_pressed(KeyCode::Escape) {
         *scene = Scene::LevelSelector(0);
         level_scene_data.level_data.save(persistent_level_data, settings).await;
         *level_scene_data = LevelSceneData::empty().await;
         textures.remove(&SceneTextureKey::Level1);
         set_default_camera();
         return;
+    }
+
+    if is_key_down(KeyCode::LeftControl) && is_key_pressed(KeyCode::R) {
+        level_scene_data.level_data.save(persistent_level_data, settings).await;
+        *level_scene_data = layout(settings).await;
     }
 
     let textures = textures.get(&SceneTextureKey::Level1).unwrap();
@@ -183,7 +188,7 @@ async fn layout(settings: &Settings) -> LevelSceneData {
 
     power_ups.push(PowerUp::new(
         PlayerPowerUp::SpeedBoost,
-        25.0,
+        30.0,
         vec2(size.x * 30.0, size.y * -6.0),
         size,
         TextureKey::PowerUps0,
@@ -193,7 +198,7 @@ async fn layout(settings: &Settings) -> LevelSceneData {
 
     power_ups.push(PowerUp::new(
         PlayerPowerUp::JumpBoost,
-        25.0,
+        30.0,
         vec2(size.x * 32.0, size.y * -6.0),
         size,
         TextureKey::PowerUps0,

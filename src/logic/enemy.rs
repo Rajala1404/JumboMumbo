@@ -310,6 +310,8 @@ impl Enemy {
         let pos = world.actor_pos(self.world_collider);
         self.pos = pos;
         self.update_pos().await;
+
+        if self.pos.y > 0.0 { self.deletable = true; }
     }
 
     async fn tile_visible(&self, world: &World, row: &i32, col: &i32) -> bool {

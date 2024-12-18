@@ -1,7 +1,7 @@
 use std::collections::BTreeMap;
 use macroquad::camera::set_default_camera;
 use macroquad::color::{BLACK, DARKBLUE, WHITE};
-use macroquad::input::{is_key_down, KeyCode};
+use macroquad::input::{is_key_down, is_key_pressed, KeyCode};
 use macroquad::math::vec2;
 use macroquad::prelude::{clear_background, screen_height, Texture2D};
 use macroquad_platformer::World;
@@ -25,7 +25,9 @@ pub async fn level_2(scene: &mut Scene, textures: &mut BTreeMap<SceneTextureKey,
             TextureKey::Projectile0,
             TextureKey::Cannon0,
             TextureKey::Icons0,
-            TextureKey::Coin0
+            TextureKey::Coin0,
+            TextureKey::PowerUps0,
+            TextureKey::Enemy0
         ].to_vec();
         textures.insert(SceneTextureKey::Level2, load_level_textures("Level 2", keys).await);
     }
@@ -35,13 +37,18 @@ pub async fn level_2(scene: &mut Scene, textures: &mut BTreeMap<SceneTextureKey,
         *level_scene_data = layout(settings).await;
     }
 
-    if is_key_down(KeyCode::Escape) {
+    if is_key_pressed(KeyCode::Escape) {
         *scene = Scene::LevelSelector(0);
         level_scene_data.level_data.save(persistent_level_data, settings).await;
         *level_scene_data = LevelSceneData::empty().await;
         textures.remove(&SceneTextureKey::Level2);
         set_default_camera();
         return;
+    }
+
+    if is_key_down(KeyCode::LeftControl) && is_key_pressed(KeyCode::R) {
+        level_scene_data.level_data.save(persistent_level_data, settings).await;
+        *level_scene_data = layout(settings).await;
     }
 
     let textures = textures.get(&SceneTextureKey::Level2).unwrap();
@@ -55,7 +62,7 @@ pub async fn level_2(scene: &mut Scene, textures: &mut BTreeMap<SceneTextureKey,
     level_data.player = Some(player);
     level_scene_data.level_data = level_data;
 
-    let won = !level_scene_data.level_data.enemies.is_empty();
+    let won = false; // level_scene_data.level_data.enemies.is_empty();
     let game_over = level_scene_data.level_data.triggers.get(&Trigger::GameOver).unwrap_or(&false).to_owned();
 
     if !game_over && !won { level::tick_level(level_scene_data, settings).await; }
@@ -73,8 +80,8 @@ pub async fn level_2(scene: &mut Scene, textures: &mut BTreeMap<SceneTextureKey,
     if won {
         set_default_camera();
         clear_background(BLACK);
-        draw_text_center("Congratulations!", 300.0 * settings.gui_scale, WHITE).await;
-        draw_text_centered("You completed Level 2! Press ESC to go back", screen_height() / 2.0 + 250.0 * settings.gui_scale, 100.0 * settings.gui_scale, WHITE).await;
+        draw_text_center("Congratulations!", 200.0 * settings.gui_scale, WHITE).await;
+        draw_text_centered("You completed Level 2! Press ESC to go back", screen_height() / 2.0 + 250.0 * settings.gui_scale, 50.0 * settings.gui_scale, WHITE).await;
     }
 }
 

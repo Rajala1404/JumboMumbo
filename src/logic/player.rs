@@ -112,7 +112,8 @@ pub struct Player {
 pub enum PlayerTrigger {
     DamageOverlay,
     DamageCooldown,
-    ShootTimeout
+    ShootTimeout,
+    OnGround
 }
 
 #[derive(PartialEq, Eq, Clone, Ord, PartialOrd, Copy, Debug)]
@@ -197,7 +198,14 @@ impl Player {
         // If the player is not on the ground change velocity of y to 500 (to simulate gravity)
         if !on_ground {      // multiplies by get_frame_time() so the speed is on all refresh rates the same
             self.speed.y += (4800.0 * settings.gui_scale) * get_frame_time();
+            if self.triggers_exec.get(&PlayerTrigger::OnGround).unwrap_or(&0.0) + 0.3 < get_time() && *self.triggers.get(&PlayerTrigger::OnGround).unwrap_or(&true) {
+                self.triggers.insert(PlayerTrigger::OnGround, false);
+            }
         } else {
+            if !self.triggers.get(&PlayerTrigger::OnGround).unwrap_or(&false) {
+                self.triggers.insert(PlayerTrigger::OnGround, true);
+                self.triggers_exec.insert(PlayerTrigger::OnGround, get_time());
+            }
             self.speed.y = 0.0;
         }
 
@@ -228,8 +236,10 @@ impl Player {
             self.state = 2;
         }
 
+        let on_ground = self.triggers.get(&PlayerTrigger::OnGround).unwrap_or(&true);
         if is_key_down(KeyCode::Space) {
-            if on_ground {
+            if *on_ground {
+                self.triggers.insert(PlayerTrigger::OnGround, false);
                 if self.power_ups.contains_key(&PlayerPowerUp::JumpBoost) {
                     self.speed.y = 2500.0 * -settings.gui_scale;
                 } else {
@@ -347,8 +357,8 @@ impl Player {
 
         if !self.triggers.get(&PlayerTrigger::ShootTimeout).unwrap_or(&false) {
             let damage = match self.power_ups.contains_key(&PlayerPowerUp::Damage2x) {
-                true => -250,
-                false => -100,
+                true => -350,
+                false => -200,
             };
             if is_mouse_button_pressed(MouseButton::Left) {
                 let size = vec2(32.0, 32.0) * settings.gui_scale;
@@ -433,6 +443,11 @@ impl Player {
     }
 
     pub async fn damage(&mut self, health: i16) {
+        if self.triggers_exec.get(&PlayerTrigger::DamageCooldown).unwrap_or(&0.0) + 0.5 < get_time() {
+            self.triggers.remove(&PlayerTrigger::DamageCooldown);
+            self.triggers_exec.remove(&PlayerTrigger::DamageCooldown);
+        }
+
         if !self.triggers.get(&PlayerTrigger::DamageCooldown).unwrap_or(&false) {
             self.health += health;
             self.total_damage_received += -health as u32;
@@ -443,9 +458,6 @@ impl Player {
             self.triggers_exec.insert(PlayerTrigger::DamageOverlay, get_time());
             self.triggers.insert(PlayerTrigger::DamageCooldown, true);
             self.triggers_exec.insert(PlayerTrigger::DamageCooldown, get_time());
-        } else if self.triggers_exec.get(&PlayerTrigger::DamageCooldown).unwrap_or(&0.0) + 0.5 < get_time() {
-            self.triggers.remove(&PlayerTrigger::DamageCooldown);
-            self.triggers_exec.remove(&PlayerTrigger::DamageCooldown);
         }
     }
 

@@ -14,7 +14,9 @@ use crate::utils::structs::{Matrix, Rect};
 /// `position` is the position that is inside the json <br>
 /// The json must have the same name as the texture and only PNG textures are supported
 pub async fn load_textures_from_tile_map(path: String) -> Vec<Texture2D> {
-    println!("Loading texture tile map from '{}'", path);
+    let mut stopwatch = Stopwatch::default();
+    print!("Loading texture tile map from '{}'... ", path);
+    stopwatch.start();
     #[derive(Deserialize)]
     struct JsonMap {
         positions: Vec<Rect>
@@ -34,6 +36,9 @@ pub async fn load_textures_from_tile_map(path: String) -> Vec<Texture2D> {
         texture.set_filter(FilterMode::Nearest);
         result.push(texture);
     }
+
+    stopwatch.stop();
+    println!("Took: {}ms", stopwatch.elapsed().as_millis());
 
     result
 }

@@ -25,8 +25,8 @@ pub async fn render_level(level_scene_data: &mut LevelSceneData, textures: &BTre
         true => {
             set_default_camera();
             clear_background(BLACK);
-            draw_text_center("GAME OVER", 300.0 * settings.gui_scale, WHITE).await;
-            draw_text_centered("Press ESC to go back", screen_height() / 2.0 + 250.0 * settings.gui_scale, 100.0 * settings.gui_scale, WHITE).await;
+            draw_text_center("GAME OVER", 250.0 * settings.gui_scale, WHITE).await;
+            draw_text_centered("Press ESC to go back or Ctrl + R to retry", screen_height() / 2.0 + 250.0 * settings.gui_scale, 60.0 * settings.gui_scale, WHITE).await;
         }
         false => {
             let world = &level_scene_data.world;
@@ -125,9 +125,19 @@ pub async fn tick_level(level_scene_data: &mut LevelSceneData, settings: &Settin
             enemy.tick(world, player, projectiles, settings).await;
         }
 
-        for enemy in enemies_to_remove {
-            enemies.remove(enemy);
-        }
+        let new_enemies = {
+            let mut result = Vec::new();
+
+            for (i, enemy) in enemies.iter().enumerate() {
+                if !enemies_to_remove.contains(&i)  {
+                    result.push(enemy.to_owned());
+                }
+            }
+
+            result
+        };
+
+        *enemies = new_enemies.to_owned();
     }
     { // Tick cannons
         let cannons = &mut level_scene_data.level_data.cannons;

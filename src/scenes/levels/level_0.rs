@@ -28,13 +28,18 @@ pub async fn level_0(scene: &mut Scene, textures: &mut BTreeMap<SceneTextureKey,
         textures.insert(SceneTextureKey::Level0, load_level_textures("Tutorial", keys).await);
     }
 
-    if is_key_down(KeyCode::Escape) {
+    if is_key_pressed(KeyCode::Escape) {
         *scene = Scene::LevelSelector(0);
         level_scene_data.level_data.save(persistent_level_data, settings).await;
         *level_scene_data = LevelSceneData::empty().await;
         textures.remove(&SceneTextureKey::Level0);
         set_default_camera();
         return;
+    }
+
+    if is_key_down(KeyCode::LeftControl) && is_key_pressed(KeyCode::R) {
+        level_scene_data.level_data.save(persistent_level_data, settings).await;
+        *level_scene_data = layout(settings).await;
     }
 
     let textures = textures.get(&SceneTextureKey::Level0).unwrap();

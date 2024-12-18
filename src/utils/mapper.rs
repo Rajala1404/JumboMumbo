@@ -27,7 +27,7 @@ use crate::utils::structs::{Matrix, Settings};
 /// `(243, 0, 255, 1..255)` = SpeedBoost where A is the duration in Seconds <br>
 /// `(242, 255, 100, 1..255)` = DamageBoost where A is the duration in Seconds <br>
 /// `(80, 255, 255, 1..255)` = JumpBoost where A is the duration in Seconds <br>
-/// `(241, 120, 100, 1..255)` = Enemy where A * 2.0 is the damage <br>
+/// `(241, 120, 100, 1..255)` = Enemy where A * 2.0 is the damage (in reverse) <br>
 ///
 /// 0, 0 is at the bottom left of the image
 pub async fn level_map_from_image(
@@ -67,8 +67,8 @@ pub async fn level_map_from_image(
         match rgba {
             [92, 0, 255, 255] => { // Player
                 player = Player::new(
-                    tile_size.x,
-                    tile_size.y,
+                    tile_size.x - 2.0,
+                    tile_size.y - 2.0,
                     vec2(tile_size.x * row as f32, tile_size.y * col as f32),
                     1,
                     world,
@@ -103,7 +103,7 @@ pub async fn level_map_from_image(
                     10.0,
                     cannon_texture_key,
                     projectile_texture_key,
-                    rgba[3] as i16 * -22,
+                    (255 - rgba[3]) as i16 * -2,
                     world
                 ).await)
             },
@@ -118,7 +118,7 @@ pub async fn level_map_from_image(
                     10.0,
                     cannon_texture_key,
                     projectile_texture_key,
-                    rgba[3] as i16 * -2,
+                    (255 - rgba[3]) as i16 * -2,
                     world
                 ).await);
             },
@@ -133,7 +133,7 @@ pub async fn level_map_from_image(
                     10.0,
                     cannon_texture_key,
                     projectile_texture_key,
-                    rgba[3] as i16 * -2,
+                    (255 - rgba[3]) as i16 * -2,
                     world
                 ).await);
             },
@@ -148,7 +148,7 @@ pub async fn level_map_from_image(
                     10.0,
                     cannon_texture_key,
                     projectile_texture_key,
-                    rgba[3] as i16 * -2,
+                    (255 - rgba[3]) as i16 * -2,
                     world
                 ).await);
             },
@@ -209,7 +209,7 @@ pub async fn level_map_from_image(
             [241, 120, 100, 1..=255] => { // Enemy
                 enemies.push(Enemy::new(
                     pos,
-                    rgba[3] as i16 * -2,
+                    (255 - rgba[3]) as i16 * -2,
                     world,
                     tile_size,
                     enemy_texture_key
