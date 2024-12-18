@@ -243,7 +243,7 @@ impl Player {
                 if self.power_ups.contains_key(&PlayerPowerUp::JumpBoost) {
                     self.speed.y = 2500.0 * -settings.gui_scale;
                 } else {
-                    self.speed.y = 1900.0 * -settings.gui_scale;
+                    self.speed.y = 2000.0 * -settings.gui_scale;
                 }
             }
         }
