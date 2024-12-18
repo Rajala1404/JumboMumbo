@@ -66,7 +66,9 @@ pub async fn level_1(scene: &mut Scene, textures: &mut BTreeMap<SceneTextureKey,
     level_data.player = Some(player);
     level_scene_data.level_data = level_data;
 
-    let won = level_scene_data.level_data.enemies.is_empty();
+    if level_scene_data.level_data.enemies.is_empty() { level_scene_data.level_data.triggers.insert(Trigger::LevelCompleted, true); }
+    let won = *level_scene_data.level_data.triggers.get(&Trigger::LevelCompleted).unwrap_or(&false);
+
     let game_over = level_scene_data.level_data.triggers.get(&Trigger::GameOver).unwrap_or(&false).to_owned();
 
     if !game_over && !won { level::tick_level(level_scene_data, settings).await; }

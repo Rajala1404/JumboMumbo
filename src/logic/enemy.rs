@@ -254,23 +254,25 @@ impl Enemy {
                     self.state = EnemyState::Attacking;
                     self.behavior.clear();
                 } else {
-                    // Jump if colliding with a wall
-                    if self.is_touching_wall(world).await {
+                    // Jump if colliding with a wall but not if wall is above or its to high
+                    if self.is_touching_wall(world).await && !world.collide_check(self.world_collider, pos + vec2(0.0, -1.0)) && !(world.collide_check(self.world_collider, pos + vec2(self.size.x, self.size.y * -4.0)) || world.collide_check(self.world_collider, pos + vec2(-self.size.x, self.size.y * -4.0))) {
                         self.behavior.push(EnemyBehavior::Move(Direction::Up));
                         self.waiters.insert(EnemyWaiter::Jumping, true);
                     }
 
                     if *self.waiters.get(&EnemyWaiter::IdlingDirection).unwrap_or(&true) {
+                        let colliding_right = world.collide_check(self.world_collider, pos + vec2(1.0, 0.0));
                         // Why the fuck does this function check so wierd
-                        if world.collide_check(self.world_collider, pos + vec2(self.size.x + 1.0, 1.0)) || *self.waiters.get(&EnemyWaiter::Jumping).unwrap_or(&false) {
+                        if (world.collide_check(self.world_collider, pos + vec2(self.size.x + 1.0, 1.0)) || *self.waiters.get(&EnemyWaiter::Jumping).unwrap_or(&false)) && !colliding_right {
                             self.waiters.insert(EnemyWaiter::IdlingDirection, true);
                             self.behavior.push(EnemyBehavior::Move(Direction::Right));
                         } else {
                             self.waiters.insert(EnemyWaiter::IdlingDirection, false);
                         }
                     } else {
+                        let colliding_left = world.collide_check(self.world_collider, pos + vec2(-1.0, 0.0));
                         // Same here
-                        if world.collide_check(self.world_collider, pos + vec2(-self.size.x - 1.0, 1.0)) || *self.waiters.get(&EnemyWaiter::Jumping).unwrap_or(&false) {
+                        if (world.collide_check(self.world_collider, pos + vec2(-self.size.x - 1.0, 1.0)) || *self.waiters.get(&EnemyWaiter::Jumping).unwrap_or(&false)) && !colliding_left {
                             self.waiters.insert(EnemyWaiter::IdlingDirection, false);
                             self.behavior.push(EnemyBehavior::Move(Direction::Left));
                         } else {
@@ -281,19 +283,24 @@ impl Enemy {
             },
         }
         self.speed.x = 0.0;
+
+        let movement_speed = match self.state {
+            EnemyState::Idling => 600.0,
+            EnemyState::Attacking => 1200.0,
+        };
         for behavior in &self.behavior {
             match behavior {
                 EnemyBehavior::Move(direction) => {
                     match direction {
                         Direction::Right => {
-                            self.speed.x = 700.0 * settings.gui_scale;
+                            self.speed.x = movement_speed * settings.gui_scale;
                         }
                         Direction::Left => {
-                            self.speed.x = -700.0 * settings.gui_scale;
+                            self.speed.x = movement_speed * -settings.gui_scale;
                         }
                         Direction::Up => {
                             if on_ground {
-                                self.speed.y = 1900.0 * -settings.gui_scale;
+                                self.speed.y = -2000.0 * settings.gui_scale;
                             }
                         }
                         _ => unimplemented!()

@@ -1,6 +1,7 @@
 use macroquad::color::Color;
 use macroquad::math::{vec2, Vec2};
 use macroquad::texture::load_image;
+use macroquad::time::get_time;
 use macroquad_platformer::World;
 use crate::logic::cannon::Cannon;
 use crate::logic::collectible::{Collectible, CollectibleType};
@@ -42,6 +43,7 @@ pub async fn level_map_from_image(
     projectile_texture_key: TextureKey,
     power_ups_texture_key: TextureKey,
 ) -> (Player, Vec<Platform>, Vec<Collectible>, Vec<Enemy>, Vec<Cannon>, Vec<PowerUp>) {
+    let start_time = get_time();
     let nv2 = vec2(0.0, 0.0);
     let mut player = Player::new(
         0.0,
@@ -99,6 +101,7 @@ pub async fn level_map_from_image(
                     rgba[1] as f64 / 10.0,
                     rgba[2] as f64 / 10.0,
                     Direction::Left,
+                    start_time,
                     1000.0 * settings.gui_scale,
                     10.0,
                     cannon_texture_key,
@@ -114,6 +117,7 @@ pub async fn level_map_from_image(
                     rgba[1] as f64 / 10.0,
                     rgba[2] as f64 / 10.0,
                     Direction::Right,
+                    start_time,
                     1000.0 * settings.gui_scale,
                     10.0,
                     cannon_texture_key,
@@ -129,6 +133,7 @@ pub async fn level_map_from_image(
                     rgba[1] as f64 / 10.0,
                     rgba[2] as f64 / 10.0,
                     Direction::Up,
+                    start_time,
                     1000.0 * settings.gui_scale,
                     10.0,
                     cannon_texture_key,
@@ -144,6 +149,7 @@ pub async fn level_map_from_image(
                     rgba[1] as f64 / 10.0,
                     rgba[2] as f64 / 10.0,
                     Direction::Down,
+                    start_time,
                     1000.0 * settings.gui_scale,
                     10.0,
                     cannon_texture_key,
@@ -211,7 +217,7 @@ pub async fn level_map_from_image(
                     pos,
                     (255 - rgba[3]) as i16 * -2,
                     world,
-                    tile_size,
+                    tile_size - vec2(2.0, 2.0),
                     enemy_texture_key
                 ).await);
             }
@@ -225,6 +231,7 @@ pub async fn level_map_from_image(
 pub async fn level_map_image_path(level: Level) -> String {
     match level {
         Level::Level2 => "./res/levels/level_2.png".to_string(),
+        Level::Level3 => "./res/levels/level_3.png".to_string(),
         _ => unimplemented!()
     }
 }

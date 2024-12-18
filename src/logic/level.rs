@@ -21,68 +21,70 @@ use crate::utils::enums::TextureKey;
 use crate::utils::text::{draw_text_center, draw_text_centered};
 
 pub async fn render_level(level_scene_data: &mut LevelSceneData, textures: &BTreeMap<TextureKey, Vec<Texture2D>>, settings: &Settings) {
-    match level_scene_data.level_data.triggers.get(&Trigger::GameOver).unwrap_or(&false) {
-        true => {
-            set_default_camera();
-            clear_background(BLACK);
-            draw_text_center("GAME OVER", 250.0 * settings.gui_scale, WHITE).await;
-            draw_text_centered("Press ESC to go back or Ctrl + R to retry", screen_height() / 2.0 + 250.0 * settings.gui_scale, 60.0 * settings.gui_scale, WHITE).await;
+    if *level_scene_data.level_data.triggers.get(&Trigger::LevelCompleted).unwrap_or(&false) {
+        set_default_camera();
+        clear_background(BLACK);
+        draw_text_center("Congratulations!", 150.0 * settings.gui_scale, WHITE).await;
+        draw_text_centered(format!("You completed {}! Press ESC to go back", level_scene_data.level_data.level.as_ref().unwrap().name()).as_str(), screen_height() / 2.0 + 250.0 * settings.gui_scale, 50.0 * settings.gui_scale, WHITE).await;
+    } else if *level_scene_data.level_data.triggers.get(&Trigger::GameOver).unwrap_or(&false) {
+        set_default_camera();
+        clear_background(BLACK);
+        draw_text_center("GAME OVER", 250.0 * settings.gui_scale, WHITE).await;
+        draw_text_centered("Press ESC to go back or Ctrl + R to retry", screen_height() / 2.0 + 250.0 * settings.gui_scale, 60.0 * settings.gui_scale, WHITE).await;
+    } else {
+        let world = &level_scene_data.world;
+        let platforms = &level_scene_data.level_data.platforms;
+        let collectibles = &mut level_scene_data.level_data.collectibles;
+        let enemies = &level_scene_data.level_data.enemies;
+        let cannons = &level_scene_data.level_data.cannons;
+        let projectiles = &level_scene_data.level_data.projectiles;
+        let power_ups = &mut level_scene_data.level_data.power_ups;
+
+        // Render collectibles
+        for collectible in collectibles {
+            collectible.render(textures).await;
         }
-        false => {
-            let world = &level_scene_data.world;
-            let platforms = &level_scene_data.level_data.platforms;
-            let collectibles = &mut level_scene_data.level_data.collectibles;
-            let enemies = &level_scene_data.level_data.enemies;
-            let cannons = &level_scene_data.level_data.cannons;
-            let projectiles = &level_scene_data.level_data.projectiles;
-            let power_ups = &mut level_scene_data.level_data.power_ups;
 
-            // Render collectibles
-            for collectible in collectibles {
-                collectible.render(textures).await;
+        let platforms = async {
+            // Render Platforms
+            for platform in platforms {
+                platform.render(textures, world).await;
             }
+        };
 
-            let platforms = async {
-                // Render Platforms
-                for platform in platforms {
-                    platform.render(textures, world).await;
-                }
-            };
-
-            let enemies = async {
-                // Render enemies
-                for enemy in enemies {
-                    enemy.render(textures, settings).await;
-                }
-            };
-
-            let cannons = async {
-                for cannon in cannons {
-                    cannon.render(textures).await;
-                }
-            };
-
-            let projectiles = async {
-                // Render projectiles
-                for projectile in projectiles {
-                    projectile.render(textures).await;
-                }
-            };
-
-            // Render power ups
-            for power_up in power_ups {
-                power_up.render(textures).await;
+        let enemies = async {
+            // Render enemies
+            for enemy in enemies {
+                enemy.render(textures, settings).await;
             }
+        };
 
-            platforms.await;
-            enemies.await;
-            cannons.await;
-            projectiles.await;
+        let cannons = async {
+            for cannon in cannons {
+                cannon.render(textures).await;
+            }
+        };
 
+        let projectiles = async {
+            // Render projectiles
+            for projectile in projectiles {
+                projectile.render(textures).await;
+            }
+        };
 
-            // Render Player
-            level_scene_data.level_data.player.as_mut().unwrap().render(&world, textures, settings).await;
+        // Render power ups
+        for power_up in power_ups {
+            power_up.render(textures).await;
         }
+
+        platforms.await;
+        enemies.await;
+        cannons.await;
+        projectiles.await;
+
+
+        // Render Player
+        level_scene_data.level_data.player.as_mut().unwrap().render(&world, textures, settings).await;
     }
 }
 
@@ -224,11 +226,15 @@ pub struct LevelStat {
     pub plays: u32,
     /// The total amount of all deaths
     pub deaths: u32,
+    /// The highest number of collected coins
+    pub coins_high: u32,
+    /// The highest number of kills
+    pub kills_high: u32,
 }
 
 impl LevelStat {
     pub fn new(level: Level) -> Self {
-        Self { level, plays: 0, deaths: 0 }
+        Self { level, plays: 0, deaths: 0, coins_high: 0, kills_high: 0 }
     }
 
     pub fn update(&mut self, deaths: u32) {
@@ -266,13 +272,27 @@ pub enum Level {
     Level0,
     Level1,
     Level2,
+    Level3,
+}
+
+impl Level {
+    pub fn name(&self) -> &'static str {
+        match self {
+            Level::Level0 => "Tutorial",
+            Level::Level1 => "Level 1",
+            Level::Level2 => "Level 2",
+            Level::Level3 => "Level 3",
+        }
+    }
 }
 
 #[derive(Eq, PartialEq, Clone, Ord, PartialOrd, Debug)]
 pub enum Trigger {
+    // Debugging
     ShowCameraColliders,
     ShowColliders,
     ShowFPS,
+    ShowPlayerPos,
 
     LevelCompleted,
     GameOver,
@@ -320,7 +340,7 @@ impl LevelData {
 
     pub async fn save(&self, persistent_level_data: &mut PersistentLevelData, settings: &Settings) {
         let mut stopwatch = Stopwatch::default();
-        println!("Saving level score and updating stats...");
+        print!("Saving level score and updating stats... ");
         stopwatch.start();
         let playtime = get_time() - self.start_time;
         let player = self.player.as_ref().unwrap();
@@ -359,7 +379,7 @@ impl LevelData {
         persistent_level_data.save(settings).await;
 
         stopwatch.stop();
-        println!("Saved level level score and updated stats! Took {}ms", stopwatch.elapsed().as_millis());
+        println!("Took {}ms", stopwatch.elapsed().as_millis());
     }
 
     pub async fn insert_trigger(&mut self, trigger: Trigger, value: bool) {

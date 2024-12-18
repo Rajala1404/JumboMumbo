@@ -97,6 +97,14 @@ pub async fn render(level_scene_data: &LevelSceneData, settings: &Settings) {
         let size = measure_text(&text, None, (32.0 * settings.gui_scale) as _, 1.0);
         draw_text(&text, level_scene_data.level_data.zero.x, level_scene_data.level_data.zero.y + size.offset_y, 32.0 * settings.gui_scale, WHITE);
     }
+
+    if is_active(Trigger::ShowPlayerPos, triggers).await {
+        let player = level_scene_data.level_data.player.as_ref().unwrap();
+        let zero = level_scene_data.level_data.zero;
+        let text = format!("X: {}, Y: {}", player.pos.x, player.pos.y);
+        let measurements = measure_text(text.as_str(), None, (32.0 * settings.gui_scale) as _, 1.0);
+        draw_text(&text, zero.x, zero.y + screen_height() - measurements.height + measurements.offset_y, 32.0 * settings.gui_scale, WHITE);
+    }
 }
 
 async fn is_active(trigger: Trigger, triggers: &BTreeMap<Trigger, bool>) -> bool {
@@ -107,6 +115,7 @@ pub async fn check(triggers: &mut BTreeMap<Trigger, bool>, trigger_locks: &mut B
     debug_key_combo(KeyCode::C, Trigger::ShowCameraColliders, triggers, trigger_locks).await;
     debug_key_combo(KeyCode::H, Trigger::ShowColliders, triggers, trigger_locks).await;
     debug_key_combo(KeyCode::F, Trigger::ShowFPS, triggers, trigger_locks).await;
+    debug_key_combo(KeyCode::P, Trigger::ShowPlayerPos, triggers, trigger_locks).await;
 }
 
 async fn debug_key_combo(key: KeyCode, trigger: Trigger, triggers: &mut BTreeMap<Trigger, bool>, trigger_locks: &mut BTreeMap<Trigger, bool>) {

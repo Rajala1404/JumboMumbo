@@ -10,7 +10,6 @@ use crate::logic::platform::{Platform, PlatformTile};
 use crate::logic::player::{Player, PlayerUIElementType};
 use crate::utils::debugger;
 use crate::utils::enums::{Animation, AnimationType, Scene, SceneTextureKey, TextureKey};
-use crate::utils::text::{draw_text_center, draw_text_centered};
 use crate::utils::texture::load_level_textures;
 
 pub async fn level_0(scene: &mut Scene, textures: &mut BTreeMap<SceneTextureKey, BTreeMap<TextureKey, Vec<Texture2D>>>, level_scene_data: &mut LevelSceneData, persistent_level_data: &mut PersistentLevelData, settings: &Settings) {
@@ -107,7 +106,9 @@ pub async fn level_0(scene: &mut Scene, textures: &mut BTreeMap<SceneTextureKey,
     level_data.player = Some(player);
     level_scene_data.level_data = level_data;
 
-    let won = level_scene_data.level_data.player.as_ref().unwrap().coins >= 2;
+    if level_scene_data.level_data.player.as_ref().unwrap().coins >= 2 { level_scene_data.level_data.triggers.insert(Trigger::LevelCompleted, true); }
+    let won = level_scene_data.level_data.triggers.get(&Trigger::LevelCompleted).unwrap_or(&false).to_owned();
+
     let game_over = level_scene_data.level_data.triggers.get(&Trigger::GameOver).unwrap_or(&false).to_owned();
 
     if !game_over && !won { level::tick_level(level_scene_data, settings).await; }
@@ -116,13 +117,6 @@ pub async fn level_0(scene: &mut Scene, textures: &mut BTreeMap<SceneTextureKey,
     if !game_over && !won {
         debugger::check(&mut level_scene_data.level_data.triggers, &mut level_scene_data.level_data.trigger_locks).await;
         debugger::render(level_scene_data, settings).await;
-    }
-
-    if won {
-        set_default_camera();
-        clear_background(BLACK);
-        draw_text_center("Congratulations!", 300.0 * settings.gui_scale, WHITE).await;
-        draw_text_centered("You completed the Tutorial! Press ESC to go back", screen_height() / 2.0 + 250.0 * settings.gui_scale, 100.0 * settings.gui_scale, WHITE).await;
     }
 }
 

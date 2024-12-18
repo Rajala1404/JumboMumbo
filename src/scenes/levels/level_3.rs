@@ -13,26 +13,26 @@ use crate::utils::mapper::{level_map_from_image, level_map_image_path};
 use crate::utils::structs::Settings;
 use crate::utils::texture::load_level_textures;
 
-pub async fn level_2(scene: &mut Scene, textures: &mut BTreeMap<SceneTextureKey, BTreeMap<TextureKey, Vec<Texture2D>>>, level_scene_data: &mut LevelSceneData, persistent_level_data: &mut PersistentLevelData, settings: &Settings) {
+pub async fn level_3(scene: &mut Scene, textures: &mut BTreeMap<SceneTextureKey, BTreeMap<TextureKey, Vec<Texture2D>>>, level_scene_data: &mut LevelSceneData, persistent_level_data: &mut PersistentLevelData, settings: &Settings) {
     clear_background(DARKBLUE);
 
     // Load textures if not loaded already
-    if textures.get(&SceneTextureKey::Level2).is_none() {
+    if textures.get(&SceneTextureKey::Level3).is_none() {
         let keys = [
             TextureKey::Platform0,
             TextureKey::Player,
-            TextureKey::Projectile0,
-            TextureKey::Cannon0,
-            TextureKey::Icons0,
             TextureKey::Coin0,
+            TextureKey::Icons0,
+            TextureKey::Enemy0,
             TextureKey::PowerUps0,
-            TextureKey::Enemy0
+            TextureKey::Cannon0,
+            TextureKey::Projectile0
         ].to_vec();
-        textures.insert(SceneTextureKey::Level2, load_level_textures("Level 2", keys).await);
+        textures.insert(SceneTextureKey::Level3, load_level_textures("Level 3", keys).await);
     }
 
     // Load scene data for right level
-    if level_scene_data.level_data.level != Some(Level::Level2) {
+    if level_scene_data.level_data.level != Some(Level::Level3) {
         *level_scene_data = layout(settings).await;
     }
 
@@ -40,7 +40,7 @@ pub async fn level_2(scene: &mut Scene, textures: &mut BTreeMap<SceneTextureKey,
         *scene = Scene::LevelSelector(0);
         level_scene_data.level_data.save(persistent_level_data, settings).await;
         *level_scene_data = LevelSceneData::empty().await;
-        textures.remove(&SceneTextureKey::Level2);
+        textures.remove(&SceneTextureKey::Level3);
         set_default_camera();
         return;
     }
@@ -50,7 +50,7 @@ pub async fn level_2(scene: &mut Scene, textures: &mut BTreeMap<SceneTextureKey,
         *level_scene_data = layout(settings).await;
     }
 
-    let textures = textures.get(&SceneTextureKey::Level2).unwrap();
+    let textures = textures.get(&SceneTextureKey::Level3).unwrap();
     let width = 128.0 * settings.gui_scale;
     let height = 128.0 * settings.gui_scale;
     let size = vec2(width, height);
@@ -64,7 +64,7 @@ pub async fn level_2(scene: &mut Scene, textures: &mut BTreeMap<SceneTextureKey,
     level_data.player = Some(player);
     level_scene_data.level_data = level_data;
 
-    if level_scene_data.level_data.player.as_ref().unwrap().pos.x > -200.0 * width { level_scene_data.level_data.triggers.insert(Trigger::LevelCompleted, true); }
+    if level_scene_data.level_data.player.as_ref().unwrap().pos.x > -0.0 * width { level_scene_data.level_data.triggers.insert(Trigger::LevelCompleted, true); }
     let won = *level_scene_data.level_data.triggers.get(&Trigger::LevelCompleted).unwrap_or(&false);
 
     let game_over = level_scene_data.level_data.triggers.get(&Trigger::GameOver).unwrap_or(&false).to_owned();
@@ -89,7 +89,7 @@ async fn layout(settings: &Settings) -> LevelSceneData {
     let size = vec2(width, height);
 
     let (player, platforms, collectibles, enemies, cannons, power_ups) = level_map_from_image(
-        level_map_image_path(Level::Level2).await,
+        level_map_image_path(Level::Level3).await,
         size,
         settings,
         &mut world,
@@ -103,7 +103,7 @@ async fn layout(settings: &Settings) -> LevelSceneData {
 
     LevelSceneData::new(
         LevelData::new(
-            Level::Level2,
+            Level::Level3,
             player,
             platforms,
             collectibles,

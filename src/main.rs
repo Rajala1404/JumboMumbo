@@ -31,9 +31,6 @@ fn window_conf() -> Conf {
     }
 }
 
-
-// TODO: Implement proper UI
-
 #[macroquad::main(window_conf)]
 async fn main() {
     let loading_handler = loading();
@@ -47,15 +44,37 @@ async fn main() {
         }
         println!("Config path: {}", config_path);
 
-
-
         let settings = {
             let file_path = format!("{}/settings.json", config_path);
             println!("Settings file path: {}", file_path);
             match fs::exists(&file_path).unwrap() {
                 true => {
-                    let file = fs::File::open(file_path).expect("Couldn't open settings file");
-                    let settings: Settings = serde_json::from_reader(file).expect("Couldn't read settings file");
+                    let new_settings = {
+                        let level_data_path = format!("{}/level_data.json", config_path);
+                        Settings::new(file_path.to_owned(), level_data_path).await
+                    };
+
+                    let file = fs::File::open(&file_path).expect("Couldn't open settings file");
+
+                    let settings: Settings = serde_json::from_reader(file).unwrap_or_else(|e| {
+                        println!("Couldn't deserialize persistent level data with error \"{}\"", e);
+                        for i in 0.. {
+                            let path = file_path.replace(".json", format!(".{i}.json").as_str());
+                            if !fs::exists(&path).unwrap() {
+                                match fs::rename(&file_path, &path) {
+                                    Ok(_) => {
+                                        println!("Moved old settings file to {path}");
+                                        break;
+                                    },
+                                    Err(_) => {
+                                        println!("Couldn't move old level data file to \"{}\"! Ignoring...", path);
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                        new_settings
+                    });
 
                     settings
                 },
@@ -81,7 +100,25 @@ async fn main() {
         match fs::exists(&settings.level_data_path).unwrap() {
             true => {
                 let file = fs::File::open(&settings.level_data_path).expect("Couldn't open level data file");
-                let persistent_level_data: PersistentLevelData = serde_json::from_reader(file).expect("Couldn't read level data file");
+                let persistent_level_data: PersistentLevelData = serde_json::from_reader(file).unwrap_or_else(|e| {
+                    println!("Couldn't deserialize persistent level data with error \"{}\"", e);
+                    for i in 0.. {
+                        let path = settings.level_data_path.replace(".json", format!(".{i}.json").as_str());
+                        if !fs::exists(&path).unwrap() {
+                            match fs::rename(&settings.level_data_path, &path) {
+                                Ok(_) => {
+                                    println!("Moved old level data file to {path}");
+                                    break;
+                                },
+                                Err(_) => {
+                                    println!("Couldn't move old level data file to \"{}\"! Ignoring...", path);
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                    PersistentLevelData::new()
+                });
 
                 persistent_level_data
             }
