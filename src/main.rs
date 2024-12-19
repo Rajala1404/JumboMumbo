@@ -203,7 +203,6 @@ async fn main() {
             }
         }
 
-        // Gets ONLY called after the game loop is done to ensure everything is drawn the right way
         next_frame().await
     };
 }

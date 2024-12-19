@@ -27,7 +27,7 @@ pub async fn render_level(level_scene_data: &mut LevelSceneData, textures: &BTre
     if *level_scene_data.level_data.triggers.get(&Trigger::LevelCompleted).unwrap_or(&false) {
         set_default_camera();
         clear_background(BLACK);
-        draw_text_center("Congratulations!", 180.0 * settings.gui_scale, WHITE).await;
+        draw_text_center("Congratulations!", 150.0 * settings.gui_scale, WHITE).await;
         draw_text_centered(format!("You completed {}! Press ESC to go back", level_scene_data.level_data.level.as_ref().unwrap().name()).as_str(), screen_height() / 2.0 + 250.0 * settings.gui_scale, 60.0 * settings.gui_scale, WHITE).await;
     } else if *level_scene_data.level_data.triggers.get(&Trigger::GameOver).unwrap_or(&false) {
         set_default_camera();

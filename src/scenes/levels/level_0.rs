@@ -116,7 +116,7 @@ pub async fn level_0(scene: &mut Scene, textures: &mut BTreeMap<SceneTextureKey,
         debugger::render(level_scene_data, settings).await;
     }
 
-    if level_scene_data.level_data.player.as_ref().unwrap().pos.y > 10.0 * (128.0 * settings.gui_scale) {
+    if level_scene_data.level_data.player.as_ref().unwrap().pos.y > 15.0 * (128.0 * settings.gui_scale) {
         level_scene_data.level_data.player.as_mut().unwrap().health = 0;
     }
 }
