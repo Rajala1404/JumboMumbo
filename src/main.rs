@@ -199,7 +199,7 @@ async fn main() {
                 start_level(&mut scene, &mut textures, &mut level_scene_data, &mut persistent_level_data, &settings).await;
             }
             Scene::Credits(_) => {
-                credits(&mut scene).await;
+                credits(&mut scene, &settings).await;
             }
         }
 
