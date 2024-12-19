@@ -18,6 +18,7 @@ stopwatch2 = "2.0.0"
 
 [package.metadata.bundle]
 name = "JumboMumbo"
+icon = ["./res/icon"]
 identifier = "com.rajalastudios.rajala1404.jumbomumbo"
 version = "1.0.0"
 resources = [ "res" ]

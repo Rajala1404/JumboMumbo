@@ -1,4 +1,6 @@
 use std::collections::BTreeMap;
+use std::env;
+use std::path::PathBuf;
 use macroquad::color::Color;
 use macroquad::miniquad::FilterMode;
 use macroquad::texture::{load_image, Image, Texture2D};
@@ -43,18 +45,33 @@ pub async fn load_textures_from_tile_map(path: String) -> Vec<Texture2D> {
     result
 }
 
+pub fn get_resources_path() -> Option<PathBuf> {
+    let executable_path = env::current_exe().unwrap();
+    let bundle_path = executable_path.parent()?.parent()?;
+    let resources_path = bundle_path.join("Resources").join("res");
+    Some(resources_path)
+}
+
+
 /// Returns the path of the provided [TextureKey] of a Texture (without extension)
 pub async fn get_texture_path(key: TextureKey) -> String {
+    #[cfg(target_os = "linux")]
+    let resource_path = "./res";
+    #[cfg(target_os = "windows")]
+    let resource_path = ".\\res";
+    #[cfg(target_os = "macos")]
+    let resource_path = get_resources_path().unwrap().to_str().unwrap().to_string();
+    
     match key {
-        TextureKey::Player => String::from("./res/textures/entities/player"),
-        TextureKey::Enemy0 => String::from("./res/textures/entities/enemy_0"),
-        TextureKey::Projectile0 => String::from("./res/textures/entities/projectile_0"),
-        TextureKey::Platform0 => String::from("./res/textures/platforms/platform_0"),
-        TextureKey::Coin0 => String::from("./res/textures/items/coin_0"),
-        TextureKey::PowerUps0 => String::from("./res/textures/items/power_ups_0"),
-        TextureKey::Icons0 => String::from("./res/ui/icons_0"),
-        TextureKey::Cannon0 => String::from("./res/textures/blocks/cannon_0"),
-        TextureKey::Button0 => String::from("./res/ui/button_0"),
+        TextureKey::Player => format!("{}/textures/entities/player", resource_path),
+        TextureKey::Enemy0 => format!("{}/textures/entities/enemy_0", resource_path),
+        TextureKey::Projectile0 => format!("{}/textures/entities/projectile_0", resource_path),
+        TextureKey::Platform0 => format!("{}/textures/platforms/platform_0", resource_path),
+        TextureKey::Coin0 => format!("{}/textures/items/coin_0", resource_path),
+        TextureKey::PowerUps0 => format!("{}/textures/items/power_ups_0", resource_path),
+        TextureKey::Icons0 => format!("{}/ui/icons_0", resource_path),
+        TextureKey::Cannon0 => format!("{}/textures/blocks/cannon_0", resource_path),
+        TextureKey::Button0 => format!("{}/ui/button_0", resource_path),
     }
 }
 

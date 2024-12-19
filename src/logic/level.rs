@@ -22,6 +22,7 @@ use crate::utils::enums::{Scene, TextureKey};
 use crate::utils::enums::Scene::LevelSelector;
 use crate::utils::random::remove_elements_vec;
 use crate::utils::text::{draw_text_center, draw_text_centered};
+use crate::utils::texture::get_resources_path;
 
 pub async fn render_level(level_scene_data: &mut LevelSceneData, textures: &BTreeMap<TextureKey, Vec<Texture2D>>, settings: &Settings) {
     if *level_scene_data.level_data.triggers.get(&Trigger::LevelCompleted).unwrap_or(&false) {
@@ -268,12 +269,20 @@ impl Level {
         }
     }
 
-    pub fn path(&self) -> &'static str {
+    pub fn path(&self) -> String {
+        #[cfg(target_os = "linux")]
+        let resource_path = "./res";
+        #[cfg(target_os = "windows")]
+        let resource_path = ".\\res";
+        #[cfg(target_os = "macos")]
+        let resource_path = get_resources_path().unwrap().to_str().unwrap().to_string();
+
+
         match self {
-            Level::Level0 => "./res/levels/level_0.png",
-            Level::Level1 => "./res/levels/level_1.png",
-            Level::Level2 => "./res/levels/level_2.png",
-            Level::Level3 => "./res/levels/level_3.png",
+            Level::Level0 => format!("{}/levels/level_0.png", resource_path),
+            Level::Level1 => format!("{}/levels/level_1.png", resource_path),
+            Level::Level2 => format!("{}/levels/level_2.png", resource_path),
+            Level::Level3 => format!("{}/levels/level_3.png", resource_path),
         }
     }
 
