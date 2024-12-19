@@ -54,6 +54,8 @@ pub enum TextureKey {
 pub enum Scene {
     MainMenu,
     SettingsMenu,
+    /// The [std::f32] is the offset of y (when scrolling)
+    Credits(f32),
     /// The [std::usize] is the Page
     LevelSelector(usize),
     Level(logic::level::Level)

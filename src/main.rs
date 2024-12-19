@@ -19,6 +19,7 @@ use logic::level::LevelSceneData;
 use utils::structs::{Settings, TempSettings};
 use crate::scenes::settings_menu::settings_menu;
 use logic::level::PersistentLevelData;
+use crate::scenes::credits::credits;
 
 fn window_conf() -> Conf {
     Conf {
@@ -196,6 +197,9 @@ async fn main() {
             }
             Scene::Level(_) => {
                 start_level(&mut scene, &mut textures, &mut level_scene_data, &mut persistent_level_data, &settings).await;
+            }
+            Scene::Credits(_) => {
+                credits(&mut scene).await;
             }
         }
 

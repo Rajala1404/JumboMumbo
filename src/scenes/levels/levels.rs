@@ -10,11 +10,6 @@ use crate::utils::enums::{Scene, SceneTextureKey, TextureKey};
 
 pub async fn start_level(scene: &mut Scene, textures: &mut BTreeMap<SceneTextureKey, BTreeMap<TextureKey, Vec<Texture2D>>>, level_scene_data: &mut LevelSceneData, persistent_level_data: &mut PersistentLevelData, settings: &Settings) {
     match scene {
-        Scene::MainMenu => {}
-        Scene::SettingsMenu => {}
-        Scene::LevelSelector(_) => {}
-        // The cases above shouldn't be possible
-
         Scene::Level(level) => {
             match level {
                 Level::Level0 => {
@@ -25,5 +20,6 @@ pub async fn start_level(scene: &mut Scene, textures: &mut BTreeMap<SceneTexture
                 Level::Level3 => level_3(scene, textures, level_scene_data, persistent_level_data, &settings).await,
             }
         }
+        _ => return,
     }
 }

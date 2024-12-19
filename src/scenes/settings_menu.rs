@@ -52,11 +52,11 @@ pub async fn settings_menu(scene: &mut Scene, textures: &mut BTreeMap<SceneTextu
         plus_button.render(textures).await;
         minus_button.render(textures).await;
 
-        if plus_button.is_released(MouseButton::Left).await && settings.gui_scale < 4.0 {
+        if plus_button.is_released(MouseButton::Left).await && temp_settings.settings.gui_scale < 2.0 {
             temp_settings.settings.gui_scale += 0.1;
             temp_settings.settings.gui_scale = round(temp_settings.settings.gui_scale, 1).await
         }
-        if minus_button.is_released(MouseButton::Left).await && settings.gui_scale > 0.2 {
+        if minus_button.is_released(MouseButton::Left).await && temp_settings.settings.gui_scale > 0.2 {
             temp_settings.settings.gui_scale -= 0.1;
             temp_settings.settings.gui_scale = round(temp_settings.settings.gui_scale, 1).await
         }
