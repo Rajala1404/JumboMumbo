@@ -6,3 +6,4 @@ pub mod texture;
 pub mod structs;
 pub mod mapper;
 pub mod loading;
+pub mod random;

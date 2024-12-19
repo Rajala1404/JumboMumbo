@@ -1,3 +1,4 @@
+use std::cmp::max;
 use std::collections::BTreeMap;
 use macroquad::camera::set_default_camera;
 use macroquad::color::{BLACK, WHITE};
@@ -17,7 +18,9 @@ use crate::logic::platform::Platform;
 use crate::logic::player::{Player, PlayerPowerUp, PowerUp};
 use crate::logic::projectile::Projectile;
 use crate::utils::structs::{Settings};
-use crate::utils::enums::TextureKey;
+use crate::utils::enums::{Scene, TextureKey};
+use crate::utils::enums::Scene::LevelSelector;
+use crate::utils::random::remove_elements_vec;
 use crate::utils::text::{draw_text_center, draw_text_centered};
 
 pub async fn render_level(level_scene_data: &mut LevelSceneData, textures: &BTreeMap<TextureKey, Vec<Texture2D>>, settings: &Settings) {
@@ -89,18 +92,20 @@ pub async fn render_level(level_scene_data: &mut LevelSceneData, textures: &BTre
 }
 
 pub async fn tick_level(level_scene_data: &mut LevelSceneData, settings: &Settings) {
+
     {   // Tick collectibles
+        let collectibles = &mut level_scene_data.level_data.collectibles;
         let mut collectibles_to_remove = Vec::new();
 
-        for (i, collectible) in level_scene_data.level_data.collectibles.iter_mut().enumerate() {
+        for (i, collectible) in collectibles.iter_mut().enumerate() {
             collectible.check(level_scene_data.level_data.player.as_ref().unwrap()).await;
             if collectible.collected {
                 collectibles_to_remove.push(i);
             }
         }
 
-        for i in collectibles_to_remove {
-            if level_scene_data.level_data.collectibles.get(i).unwrap().collectible_type == CollectibleType::Coin {
+        for i in collectibles_to_remove.to_owned() {
+            if collectibles.get(i).unwrap().collectible_type == CollectibleType::Coin {
                 let player = level_scene_data.level_data.player.as_mut().unwrap();
                 if player.power_ups.contains_key(&PlayerPowerUp::Coins2x) {
                     player.coins += 2;
@@ -108,8 +113,9 @@ pub async fn tick_level(level_scene_data: &mut LevelSceneData, settings: &Settin
                     player.coins += 1;
                 }
             }
-            level_scene_data.level_data.collectibles.remove(i);
         }
+
+        *collectibles = remove_elements_vec(collectibles, collectibles_to_remove).await;
     }
     { // Tick enemies
         let enemies = &mut level_scene_data.level_data.enemies;
@@ -127,19 +133,7 @@ pub async fn tick_level(level_scene_data: &mut LevelSceneData, settings: &Settin
             enemy.tick(world, player, projectiles, settings).await;
         }
 
-        let new_enemies = {
-            let mut result = Vec::new();
-
-            for (i, enemy) in enemies.iter().enumerate() {
-                if !enemies_to_remove.contains(&i)  {
-                    result.push(enemy.to_owned());
-                }
-            }
-
-            result
-        };
-
-        *enemies = new_enemies.to_owned();
+        *enemies = remove_elements_vec(&enemies, enemies_to_remove).await;
     }
     { // Tick cannons
         let cannons = &mut level_scene_data.level_data.cannons;
@@ -163,36 +157,23 @@ pub async fn tick_level(level_scene_data: &mut LevelSceneData, settings: &Settin
             }
         }
 
-        let new_projectiles = {
-            let mut result = Vec::new();
-
-            for (i, projectile) in projectiles.iter().enumerate() {
-                if !projectiles_to_remove.contains(&i)  {
-                    result.push(projectile.to_owned());
-                }
-            }
-
-            result
-        };
-
-        level_data.projectiles = new_projectiles.to_owned();
+        level_data.projectiles = remove_elements_vec(&projectiles, projectiles_to_remove).await;
         level_scene_data.level_data = level_data;
     }
     { // Tick power ups
         let player = level_scene_data.level_data.player.as_mut().unwrap();
+        let power_ups = &mut level_scene_data.level_data.power_ups;
 
         let mut power_ups_to_remove = Vec::new();
 
-        for (i, power_up) in level_scene_data.level_data.power_ups.iter_mut().enumerate() {
+        for (i, power_up) in power_ups.iter_mut().enumerate() {
             power_up.tick(player).await;
             if power_up.collected {
                 power_ups_to_remove.push(i);
             }
         }
 
-        for power_up in power_ups_to_remove {
-            level_scene_data.level_data.power_ups.remove(power_up);
-        }
+        *power_ups = remove_elements_vec(&power_ups, power_ups_to_remove).await;
     }
 }
 
@@ -237,9 +218,11 @@ impl LevelStat {
         Self { level, plays: 0, deaths: 0, coins_high: 0, kills_high: 0 }
     }
 
-    pub fn update(&mut self, deaths: u32) {
+    pub fn update(&mut self, deaths: u32, level_score: &LevelScore) {
         self.plays += 1;
         self.deaths += deaths;
+        self.coins_high = max(self.coins_high, level_score.coins);
+        self.kills_high = max(self.kills_high, level_score.kills);
     }
 }
 
@@ -267,7 +250,7 @@ impl LevelScore {
 }
 
 /// This enum defines all existing levels
-#[derive(Eq, PartialEq, Clone, Ord, PartialOrd, Serialize, Deserialize, Debug)]
+#[derive(Eq, PartialEq, Clone, Ord, PartialOrd, Serialize, Deserialize, Debug, Copy)]
 pub enum Level {
     Level0,
     Level1,
@@ -282,6 +265,24 @@ impl Level {
             Level::Level1 => "Level 1",
             Level::Level2 => "Level 2",
             Level::Level3 => "Level 3",
+        }
+    }
+
+    pub fn path(&self) -> &'static str {
+        match self {
+            Level::Level0 => "./res/levels/level_0.png",
+            Level::Level1 => "./res/levels/level_1.png",
+            Level::Level2 => "./res/levels/level_2.png",
+            Level::Level3 => "./res/levels/level_3.png",
+        }
+    }
+
+    pub fn level_selector_page(&self) -> usize {
+        match self {
+            Level::Level0 => 0,
+            Level::Level1 => 1,
+            Level::Level2 => 2,
+            Level::Level3 => 3,
         }
     }
 }
@@ -369,7 +370,7 @@ impl LevelData {
                 0
             }
         };
-        stats_ref.update(deaths);
+        stats_ref.update(deaths, &score);
 
         let score_space = persistent_level_data.scores.get_mut(level).unwrap();
         // 10000 entries are about 3 MB large, and we don't want to go larger than that
@@ -422,5 +423,12 @@ impl LevelSceneData {
             level_data,
             world: World::new(),
         }
+    }
+
+    pub async fn escape(&mut self, persistent_level_data: &mut PersistentLevelData, settings: &Settings, scene: &mut Scene) {
+        self.level_data.save(persistent_level_data, settings).await;
+        *scene = LevelSelector(self.level_data.level.as_ref().unwrap().level_selector_page());
+        *self = Self::empty().await;
+        set_default_camera()
     }
 }

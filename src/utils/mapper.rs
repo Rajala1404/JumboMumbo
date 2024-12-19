@@ -6,7 +6,6 @@ use macroquad_platformer::World;
 use crate::logic::cannon::Cannon;
 use crate::logic::collectible::{Collectible, CollectibleType};
 use crate::logic::enemy::Enemy;
-use crate::logic::level::Level;
 use crate::logic::platform::{Platform, PlatformTile};
 use crate::logic::player::{Player, PlayerPowerUp, PowerUp};
 use crate::utils::enums::{Animation, AnimationType, Direction, TextureKey};
@@ -226,12 +225,4 @@ pub async fn level_map_from_image(
     }
 
     (player, platforms, collectibles, enemies, cannons, power_ups)
-}
-
-pub async fn level_map_image_path(level: Level) -> String {
-    match level {
-        Level::Level2 => "./res/levels/level_2.png".to_string(),
-        Level::Level3 => "./res/levels/level_3.png".to_string(),
-        _ => unimplemented!()
-    }
 }

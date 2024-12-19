@@ -1,5 +1,4 @@
 use std::collections::BTreeMap;
-use macroquad::camera::set_default_camera;
 use macroquad::color::DARKBLUE;
 use macroquad::input::{is_key_down, is_key_pressed, KeyCode};
 use macroquad::math::vec2;
@@ -9,7 +8,7 @@ use crate::logic::level;
 use crate::logic::level::{Level, LevelData, LevelSceneData, PersistentLevelData, Trigger};
 use crate::utils::debugger;
 use crate::utils::enums::{Scene, SceneTextureKey, TextureKey};
-use crate::utils::mapper::{level_map_from_image, level_map_image_path};
+use crate::utils::mapper::level_map_from_image;
 use crate::utils::structs::Settings;
 use crate::utils::texture::load_level_textures;
 
@@ -37,11 +36,8 @@ pub async fn level_3(scene: &mut Scene, textures: &mut BTreeMap<SceneTextureKey,
     }
 
     if is_key_pressed(KeyCode::Escape) {
-        *scene = Scene::LevelSelector(0);
-        level_scene_data.level_data.save(persistent_level_data, settings).await;
-        *level_scene_data = LevelSceneData::empty().await;
-        textures.remove(&SceneTextureKey::Level3);
-        set_default_camera();
+        level_scene_data.escape(persistent_level_data, settings, scene).await;
+        textures.remove(&SceneTextureKey::Level1);
         return;
     }
 
@@ -52,8 +48,6 @@ pub async fn level_3(scene: &mut Scene, textures: &mut BTreeMap<SceneTextureKey,
 
     let textures = textures.get(&SceneTextureKey::Level3).unwrap();
     let width = 128.0 * settings.gui_scale;
-    let height = 128.0 * settings.gui_scale;
-    let size = vec2(width, height);
 
     let mut level_data = level_scene_data.level_data.clone(); // Temporary level data
     let mut world = &mut level_scene_data.world;
@@ -89,7 +83,7 @@ async fn layout(settings: &Settings) -> LevelSceneData {
     let size = vec2(width, height);
 
     let (player, platforms, collectibles, enemies, cannons, power_ups) = level_map_from_image(
-        level_map_image_path(Level::Level3).await,
+        Level::Level3.path().to_string(),
         size,
         settings,
         &mut world,

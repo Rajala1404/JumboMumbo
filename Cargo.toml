@@ -13,5 +13,5 @@ serde = { version = "1.0.215", features = ["derive"] }
 serde_json = "1.0.133"
 # Get Platform directories (for cross-platform support)
 dirs = "5.0.1"
-# Measure execution time of code (just for debugging)
+# Measure execution time of code
 stopwatch2 = "2.0.0"

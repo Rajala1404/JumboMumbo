@@ -18,7 +18,7 @@ pub async fn draw_text_centered(text: &str, y: f32, font_size: f32, color: Color
     draw_text(
         text,
         screen_width() / 2.0 - size.width / 2.0,
-        y,
+        y + size.offset_y,
         font_size,
         color
     );

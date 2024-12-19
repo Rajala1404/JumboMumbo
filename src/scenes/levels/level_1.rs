@@ -42,11 +42,8 @@ pub async fn level_1(scene: &mut Scene, textures: &mut BTreeMap<SceneTextureKey,
     }
 
     if is_key_pressed(KeyCode::Escape) {
-        *scene = Scene::LevelSelector(0);
-        level_scene_data.level_data.save(persistent_level_data, settings).await;
-        *level_scene_data = LevelSceneData::empty().await;
+        level_scene_data.escape(persistent_level_data, settings, scene).await;
         textures.remove(&SceneTextureKey::Level1);
-        set_default_camera();
         return;
     }
 

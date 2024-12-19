@@ -77,6 +77,27 @@ impl From<Image> for Matrix<Color> {
     }
 }
 
+/// Basically the same as [load_level_textures()] just without loading screen
+pub async fn load_textures(name: &str, keys: Vec<TextureKey>) -> BTreeMap<TextureKey, Vec<Texture2D>> {
+    let mut stopwatch = Stopwatch::default();
+    let mut result = BTreeMap::new();
+
+    println!("Loading textures for {}...", name);
+    stopwatch.start();
+
+    for key  in keys {
+        let path = get_texture_path(key.to_owned()).await;
+        result.insert(key.to_owned(), load_textures_from_tile_map(path).await);
+    }
+
+    stopwatch.stop();
+    println!("Loaded textures for {}! Took: {}ms", name, stopwatch.elapsed().as_millis());
+
+    result
+}
+
+/// Loads all [Texture2D]'s from the [TextureKey]'s from the provided [Vec<TextureKey>] and returns them <br>
+/// Also shows a loading screen
 pub async fn load_level_textures(name: &str, keys: Vec<TextureKey>) -> BTreeMap<TextureKey, Vec<Texture2D>> {
     let mut stopwatch = Stopwatch::default();
     let mut result = BTreeMap::new();

@@ -50,11 +50,12 @@ pub enum TextureKey {
     Button0,
 }
 
+#[derive(Copy, Clone, PartialEq, Debug)]
 pub enum Scene {
     MainMenu,
     SettingsMenu,
-    /// The i32 is the Page
-    LevelSelector(i32),
+    /// The [std::usize] is the Page
+    LevelSelector(usize),
     Level(logic::level::Level)
 }
 
