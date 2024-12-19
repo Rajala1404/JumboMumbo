@@ -10,7 +10,6 @@ use dirs::config_dir;
 use crate::utils::mathemann::stretch_float_to;
 use crate::utils::text::{draw_text_center, draw_text_centered};
 use macroquad::prelude::*;
-use macroquad::ui::{root_ui, Skin};
 use utils::enums::{Scene, SceneTextureKey, TextureKey};
 use crate::scenes::level_selector::level_selector;
 use crate::scenes::levels::levels::start_level;
@@ -132,40 +131,6 @@ async fn main() {
             }
         }
     };
-
-    let skin = {
-        let font = load_ttf_font("res/fonts/MinimalPixel v2.ttf").await.unwrap();
-
-        let window_style = root_ui()
-            .style_builder()
-            .background(load_image("res/ui/window_background.png").await.expect("Error loading res/ui/window_background.png"))
-            .background_margin(RectOffset::new(180.0, 180.0, 180.0, 180.0))
-            .build();
-
-        let button_style = root_ui()
-            .style_builder()
-            .background(load_image("res/ui/button/background.png").await.expect("Error loading res/ui/window_background.png"))
-            .background_hovered(load_image("res/ui/button/background_hovered.png").await.expect("Error loading res/ui/button/background_hovered.png"))
-            .background_clicked(load_image("res/ui/button/background_clicked.png").await.expect("Error loading res/ui/button/background_clicked.png"))
-            .background_margin(RectOffset::new(70.0, 70.0, 70.0, 70.0))
-            .with_font(&font)
-            .unwrap()
-            .text_color(WHITE)
-            .text_color_hovered(LIGHTGRAY)
-            .text_color_clicked(GRAY)
-            .font_size(40)
-            .build();
-
-        Skin {
-            window_style,
-            button_style,
-            ..root_ui().default_skin()
-        }
-    };
-
-    let window_skin = skin.clone();
-
-    root_ui().push_skin(&window_skin);
 
     // Runs to make sure the screen size is the right one
     for _ in 0..4 {

@@ -31,8 +31,6 @@ pub async fn credits(scene: &mut Scene, settings: &Settings) {
 
     draw_text_centered("Play testing - Gopiler", current_y, font_size, WHITE).await;
     current_y += font_size * 2.0;
-    draw_text_centered("MinimalPixel v2.ttf - Mounir Tohami", current_y, font_size, WHITE).await;
-    current_y += font_size * 2.0;
     draw_text_centered("Player textures - Dinno", current_y, font_size, WHITE).await;
     current_y += font_size * 2.0;
     draw_text_centered("Fireball texture - Dinno", current_y, font_size, WHITE).await;
