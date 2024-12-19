@@ -211,7 +211,6 @@ impl Player {
 
         let mut direction = 0;
 
-
         let movement_speed = {
             if self.power_ups.contains_key(&PlayerPowerUp::SpeedBoost) {
                 2000.0 * settings.gui_scale
@@ -325,7 +324,7 @@ impl Player {
         let colliding_enemies = self.collider_new.collide_check_enemy(enemies, vec2(0.0, 0.0)).await;
         if !colliding_enemies.is_empty() {
             for enemy in colliding_enemies {
-                let damage = enemies.get(enemy).expect("Oh no! This should be impossible!").damage;
+                let damage = enemies.get(enemy).expect("Oh no! This shouldn't be impossible!").damage;
                 self.damage(damage).await;
             }
         }
@@ -333,7 +332,7 @@ impl Player {
         let projectiles = &level_data.projectiles;
         let colliding_projectiles = self.collider_new.collide_check_projectile(projectiles, vec2(0.0, 0.0)).await;
         for projectile in colliding_projectiles {
-            let projectile = projectiles.get(projectile).expect("Oh no! This should be impossible!");
+            let projectile = projectiles.get(projectile).expect("Oh no! This shouldn't be impossible!");
             match projectile.origin {
                 ProjectileOrigin::Player => { continue; }
                 ProjectileOrigin::Canon => {
